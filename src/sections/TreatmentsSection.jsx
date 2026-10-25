@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { siteData } from '../data/site';
+import { siteData, whatsappFor } from '../data/site';
 import { WordFillParagraph, SectionEyebrowRow } from '../components/MotionText';
 
 export const TreatmentsSection = () => {
@@ -10,7 +10,7 @@ export const TreatmentsSection = () => {
   const imgFrameRef = useRef(null);
 
   useLayoutEffect(() => {
-    const mm = gsap.matchMedia(sectionRef);
+    const mm = gsap.matchMedia(sectionRef.current);
 
     mm.add({
       isDesktop: '(min-width: 901px)',
@@ -20,39 +20,41 @@ export const TreatmentsSection = () => {
       const { reduceMotion, isDesktop } = context.conditions;
 
       if (reduceMotion) {
-        gsap.set('.treatment-item-row, .treatment-photo-frame, .treatment-item-line, .treatment-note-pill', { opacity: 1, scaleX: 1 });
+        gsap.set('.treatment-compact-row, .treatment-photo-frame, .treatment-compact-line, .treatment-before-care-card', { opacity: 1, scaleX: 1 });
         return;
       }
 
       // Stagger items with line drawing across
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: '.treatment-items-list',
-          start: 'top 85%'
+          trigger: '.treatment-compact-list',
+          start: 'top 85%',
+          once: true
         }
       });
 
-      tl.from('.treatment-item-row', {
+      tl.from('.treatment-compact-row', {
         x: 20,
         opacity: 0,
         duration: 0.65,
         stagger: 0.08,
         ease: 'power3.out'
       })
-      .fromTo('.treatment-item-line',
+      .fromTo('.treatment-compact-line',
         { scaleX: 0 },
         { scaleX: 1, duration: 0.7, stagger: 0.08, ease: 'power3.out' },
         '-=0.5'
       );
 
-      gsap.from('.treatment-note-pill', {
+      gsap.from('.treatment-before-care-card', {
         y: 20,
         opacity: 0,
         duration: 0.7,
         ease: 'power3.out',
         scrollTrigger: {
-          trigger: '.treatment-note-pill',
-          start: 'top 90%'
+          trigger: '.treatment-before-care-card',
+          start: 'top 90%',
+          once: true
         }
       });
 
@@ -67,7 +69,8 @@ export const TreatmentsSection = () => {
             ease: 'power3.out',
             scrollTrigger: {
               trigger: imgFrameRef.current,
-              start: 'top 85%'
+              start: 'top 85%',
+              once: true
             },
             onComplete: () => {
               const img = document.querySelector('.treatment-inner-img');
@@ -76,18 +79,16 @@ export const TreatmentsSection = () => {
           }
         );
 
-        if (isDesktop) {
-          gsap.to('.treatment-inner-img', {
-            yPercent: -8,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: imgFrameRef.current,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true
-            }
-          });
-        }
+        gsap.to('.treatment-inner-img', {
+          yPercent: isDesktop ? -8 : -4,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: imgFrameRef.current,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true
+          }
+        });
       }
     });
 
@@ -99,7 +100,7 @@ export const TreatmentsSection = () => {
       <div className="container">
         <SectionEyebrowRow label={data.tagline} num={data.num} />
 
-        {/* Alternating Layout: Content on Left, Large Photo on Right */}
+        {/* Content on Left, Large Photo on Right */}
         <div className="discipline-grid-with-photo">
           <div className="discipline-content-pane">
             <h2 id="treatments-title" style={{ marginBottom: '1.25rem' }}>
@@ -110,31 +111,32 @@ export const TreatmentsSection = () => {
               {data.lead}
             </WordFillParagraph>
 
-            <div className="treatment-note-pill">
-              <span className="treatment-note-label">Diagnosis</span>
-              <p className="treatment-note-text">{data.note}</p>
+            <div className="treatment-before-care-card">
+              <span className="treatment-before-care-label">Before-Care Note</span>
+              <p className="treatment-before-care-text">{data.note}</p>
             </div>
 
-            <ul className="discipline-items-list treatment-items-list" aria-label="Hair treatment therapies">
+            <ol className="treatment-compact-list" aria-label="Hair treatment therapies">
               {data.items.map((item, idx) => (
-                <li key={idx} className="discipline-item-row treatment-item-row">
-                  <div className="discipline-item-content">
-                    <span className="discipline-item-bullet">—</span>
-                    <span className="discipline-item-text">{item}</span>
-                  </div>
-                  <div className="treatment-item-line" aria-hidden="true"></div>
+                <li key={idx} className="treatment-compact-row">
+                  <span className="treatment-compact-num">
+                    {String(idx + 1).padStart(2, '0')}
+                  </span>
+                  <span className="treatment-compact-text">{item}</span>
+                  <div className="treatment-compact-line" aria-hidden="true"></div>
                 </li>
               ))}
-            </ul>
+            </ol>
 
             <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
               <a
-                href={siteData.links.whatsappGeneral}
+                href={whatsappFor("hair treatments")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary"
+                aria-label="Consult on hair treatments on WhatsApp"
               >
-                <span>Enquire about treatments</span>
+                <span>Consult on treatments</span>
                 <span className="btn-arrow">→</span>
               </a>
             </div>
@@ -151,6 +153,7 @@ export const TreatmentsSection = () => {
                   height="1000"
                   className="discipline-photo-img treatment-inner-img"
                   loading="lazy"
+                  decoding="async"
                 />
               </div>
             </div>
@@ -166,15 +169,17 @@ export const TreatmentsSection = () => {
           align-items: center;
         }
 
-        .treatment-note-pill {
+        .treatment-before-care-card {
           margin-bottom: 2rem;
-          padding: 1.15rem 1.35rem;
+          padding: 1.25rem 1.5rem;
           background: var(--color-surface);
+          border: 1px solid var(--color-border);
           border-left: 3px solid var(--color-accent);
-          max-width: 44ch;
+          border-radius: 2px;
+          max-width: 46ch;
         }
 
-        .treatment-note-label {
+        .treatment-before-care-label {
           display: block;
           font-size: var(--size-micro);
           text-transform: uppercase;
@@ -184,32 +189,48 @@ export const TreatmentsSection = () => {
           font-weight: 600;
         }
 
-        .treatment-note-text {
+        .treatment-before-care-text {
           font-size: 0.9375rem;
           color: var(--color-text);
           margin: 0;
           font-weight: 500;
+          line-height: 1.5;
         }
 
-        .discipline-items-list {
+        .treatment-compact-list {
           list-style: none;
+          margin: 0;
+          padding: 0;
           display: flex;
           flex-direction: column;
           border-top: 1px solid var(--color-border);
         }
 
-        .discipline-item-row {
+        .treatment-compact-row {
           position: relative;
-          padding: 1.15rem 0;
-        }
-
-        .discipline-item-content {
           display: flex;
           align-items: baseline;
           gap: 1.25rem;
+          padding: 1.1rem 0;
         }
 
-        .treatment-item-line {
+        .treatment-compact-num {
+          font-family: var(--font-serif);
+          font-size: 1.15rem;
+          color: var(--color-accent);
+          font-weight: 500;
+          min-width: 2ch;
+          line-height: 1;
+        }
+
+        .treatment-compact-text {
+          font-size: 1.05rem;
+          color: var(--color-text);
+          font-weight: 400;
+          line-height: 1.4;
+        }
+
+        .treatment-compact-line {
           position: absolute;
           bottom: 0;
           left: 0;
@@ -218,17 +239,6 @@ export const TreatmentsSection = () => {
           background-color: var(--color-border-light);
           transform-origin: left;
           transform: scaleX(1);
-        }
-
-        .discipline-item-bullet {
-          color: var(--color-accent);
-          font-family: var(--font-serif);
-        }
-
-        .discipline-item-text {
-          font-size: 1.05rem;
-          color: var(--color-text);
-          font-weight: 400;
         }
 
         .discipline-photo-pane {
@@ -252,13 +262,21 @@ export const TreatmentsSection = () => {
           will-change: transform;
         }
 
+        .treatment-inner-img {
+          object-position: 50% 35%;
+        }
+
         @media (max-width: 900px) {
           .discipline-grid-with-photo {
             grid-template-columns: 1fr;
             gap: 2.5rem;
           }
           .treatment-photo-frame {
-            aspect-ratio: 16/10;
+            aspect-ratio: 4/5;
+            max-height: 70svh;
+          }
+          .treatment-inner-img {
+            object-position: 50% 35%;
           }
         }
       `}</style>

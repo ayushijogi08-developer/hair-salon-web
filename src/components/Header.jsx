@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { siteData } from '../data/site';
+import { canHover } from '../lib/motion';
 
 export const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -26,29 +27,73 @@ export const Header = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Keyboard escape
+  // Set html[data-header='shown' | 'hidden'] attribute for dependent sticky elements
   useEffect(() => {
+    document.documentElement.dataset.header = headerVisible ? 'shown' : 'hidden';
+  }, [headerVisible]);
+
+  const toggleBtnRef = useRef(null);
+  const drawerRef = useRef(null);
+  const closeBtnRef = useRef(null);
+  const prevFocusedRef = useRef(null);
+
+  // Focus trap, initial focus, and Escape handling for mobile drawer
+  useEffect(() => {
+    if (!menuOpen) {
+      if (prevFocusedRef.current) {
+        prevFocusedRef.current.focus?.();
+        prevFocusedRef.current = null;
+      }
+      document.body.style.overflow = '';
+      return;
+    }
+
+    // Menu opened
+    prevFocusedRef.current = document.activeElement;
+    document.body.style.overflow = 'hidden';
+
+    // Move focus into drawer
+    const focusTimer = setTimeout(() => {
+      closeBtnRef.current?.focus();
+    }, 50);
+
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && menuOpen) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
         setMenuOpen(false);
+        return;
+      }
+
+      if (e.key === 'Tab' && drawerRef.current) {
+        const focusables = drawerRef.current.querySelectorAll(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusables.length) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [menuOpen]);
 
-  useEffect(() => {
-    if (menuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [menuOpen]);
 
   // Magnetic button on desktop for header CTA
   useEffect(() => {
     const btn = ctaBtnRef.current;
-    if (!btn || window.innerWidth <= 860) return;
+    if (!btn || !canHover()) return;
 
     const handleMouseMove = (e) => {
       const rect = btn.getBoundingClientRect();
@@ -111,6 +156,7 @@ export const Header = () => {
           </a>
 
           <button
+            ref={toggleBtnRef}
             type="button"
             className="mobile-nav-toggle"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -138,6 +184,7 @@ export const Header = () => {
       {menuOpen && (
         <div className="mobile-drawer-overlay" onClick={() => setMenuOpen(false)}>
           <div
+            ref={drawerRef}
             id="mobile-navigation"
             className="mobile-drawer"
             role="dialog"
@@ -149,6 +196,7 @@ export const Header = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="brand-title">Hair City</span>
                 <button
+                  ref={closeBtnRef}
                   type="button"
                   className="mobile-drawer-close"
                   onClick={() => setMenuOpen(false)}
@@ -168,8 +216,7 @@ export const Header = () => {
 
             <div style={{ paddingTop: '2rem', borderTop: '1px solid var(--color-border)' }}>
               <p style={{ fontSize: '0.8125rem', marginBottom: '1.25rem', color: 'var(--color-muted)' }}>
-                Blackberry Complex, Ranpise Nagar, Akola<br />
-                Mon–Sun: 9:00 AM – 10:00 PM
+                {siteData.hours.days}: {siteData.hours.time}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <a

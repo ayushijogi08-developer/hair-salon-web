@@ -4,6 +4,25 @@
    Typography: Newsreader (Display Serif) + Plus Jakarta Sans (Body Sans)
    ========================================================================== */
 
+/* Metric-adjusted fallback fonts to limit Cumulative Layout Shift (CLS) during webfont swap */
+@font-face {
+  font-family: 'Newsreader-Fallback';
+  src: local('Georgia');
+  size-adjust: 96%;
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'PlusJakartaSans-Fallback';
+  src: local('Arial'), local('-apple-system'), local('BlinkMacSystemFont');
+  size-adjust: 98%;
+  ascent-override: 100%;
+  descent-override: 26%;
+  line-gap-override: 0%;
+}
+
 :root {
   /* Warm restrained editorial palette */
   --color-bg: #FAF8F5;
@@ -21,12 +40,13 @@
   --color-dark-bg: #141211;
   --color-dark-surface: #1E1B19;
   --color-dark-text: #FAF8F5;
-  --color-dark-muted: #9E968F;
+  --color-dark-muted: #A8A099;
   --color-dark-border: #2C2825;
+  --color-dark-accent: #C88358;
 
-  /* Typography */
-  --font-serif: 'Newsreader', Georgia, serif;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Typography with metric-matched fallbacks */
+  --font-serif: 'Newsreader', 'Newsreader-Fallback', 'Playfair Display', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', 'PlusJakartaSans-Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', sans-serif;
 
   /* Fluid typography */
   --size-hero: clamp(2.5rem, 7.5vw, 6.5rem);
@@ -34,11 +54,11 @@
   --size-h3: clamp(1.25rem, 1.6vw + 0.5rem, 1.85rem);
   --size-body: clamp(0.95rem, 0.25vw + 0.85rem, 1.0625rem);
   --size-small: clamp(0.8125rem, 0.15vw + 0.75rem, 0.875rem);
-  --size-micro: 0.6875rem;
+  --size-micro: 0.75rem;
 
   /* Layout */
   --max-width: 1320px;
-  --header-height: 72px;
+  --header-height: 76px;
   --mobile-bar-height: 60px;
 
   /* Easing */
@@ -52,6 +72,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
@@ -77,6 +98,10 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 3px;
+}
+
+.academy-section :focus-visible {
+  outline-color: var(--color-dark-accent);
 }
 
 .skip-link {
@@ -401,6 +426,10 @@ img {
   color: var(--color-text);
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.25rem 0;
+  line-height: 1.15;
 }
 
 .brand-subtitle {
@@ -410,7 +439,8 @@ img {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--color-muted);
-  margin-top: 1px;
+  margin-top: 3px;
+  line-height: 1;
 }
 
 .nav-desktop {
@@ -569,6 +599,36 @@ img {
   color: var(--color-dark-border);
 }
 
+/* Business Hours Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-body);
+  font-size: var(--size-micro);
+  font-weight: 500;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  line-height: 1;
+  width: fit-content;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #2e7d4a;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-badge[data-open="false"] .status-dot {
+  background-color: #8c857b;
+}
+
 /* Responsive Media Queries */
 @media (max-width: 860px) {
   .nav-desktop, .header-cta {
@@ -594,3 +654,37 @@ img {
     scroll-behavior: auto !important;
   }
 }
+
+/* Touch active interaction */
+@media (hover: none) {
+  .btn:active,
+  .service-overview-row:active,
+  .work-gallery-card:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Touch device minimum target sizing for text links (WCAG 2.5.5 / 2.5.8) */
+.footer-contact-link {
+  color: inherit;
+  transition: color var(--transition-fast);
+}
+
+.footer-contact-link:hover {
+  color: var(--color-accent);
+}
+
+@media (pointer: coarse) {
+  .footer-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-bottom: 0.15rem !important;
+  }
+  .footer-contact-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+

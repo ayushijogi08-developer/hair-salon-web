@@ -49,7 +49,7 @@ export const Preloader = ({ onComplete }) => {
         duration: curtainDuration,
         ease: 'power3.inOut'
       }, curtainDelay);
-    }, preloaderRef);
+    }, preloaderRef.current);
 
     // Safety timeout: under 1s on mobile, 1.6s on desktop
     const timer = setTimeout(() => {

@@ -2,129 +2,151 @@ import React, { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText';
 import { siteData } from '../data/site';
+import { getBusinessStatus } from '../lib/hours';
 
 export const Hero = () => {
   const heroRef = useRef(null);
+  const visualRef = useRef(null);
   const heroData = siteData.hero;
   const heroImg = siteData.images.hero;
-  const imageFrameRef = useRef(null);
+  const secondaryImg = siteData.images.cutting?.boyCut || {
+    src: siteData.images.cutting?.src,
+    alt: "Client with textured cut and styled fade at Hair City Salon, Akola"
+  };
+  const businessStatus = getBusinessStatus();
 
   useLayoutEffect(() => {
-    const mm = gsap.matchMedia(heroRef);
+    const mm = gsap.matchMedia(heroRef.current);
 
     mm.add({
-      isDesktop: '(min-width: 961px)',
-      isMobile: '(max-width: 960px)',
+      isDesktop: '(min-width: 1024px)',
+      isMobile: '(max-width: 1023px)',
       reduceMotion: '(prefers-reduced-motion: reduce)'
     }, (context) => {
       const { reduceMotion, isDesktop } = context.conditions;
 
       if (reduceMotion) {
-        gsap.set('.hero-meta-fade, .hero-photo-wrap, .hero-learn-line', { opacity: 1, scaleX: 1 });
+        gsap.set(
+          '.hero-meta-fade, .hero-arch-frame, .hero-learn-line, .hero-arch-caption, .hero-seal-badge, .hero-info-strip',
+          {
+            opacity: 1,
+            scaleX: 1,
+            scale: 1,
+            y: 0,
+            clipPath: 'inset(0% 0% 0% 0%)'
+          }
+        );
         return;
       }
 
-      // Split lines sliding up from mask
+      // Split words sliding up from mask
       const headlineEl = document.querySelector('#hero-title');
       let split = null;
       if (headlineEl) {
         split = new SplitText(headlineEl, { type: 'lines,words', linesClass: 'hero-split-line' });
       }
 
-      // Hide elements only after GSAP loads (progressive enhancement)
+      // Progressive enhancement initial states
       gsap.set('.hero-meta-fade', { opacity: 0, y: 16 });
+      gsap.set('.hero-arch-caption, .hero-seal-badge', { opacity: 0 });
+      gsap.set('.hero-info-strip', { opacity: 0, y: 14 });
 
-      const tl = gsap.timeline({ delay: 0.1 });
+      const tl = gsap.timeline({ delay: 0.05 });
 
       if (split && split.words.length) {
         tl.from(split.words, {
           y: '100%',
           opacity: 0,
-          duration: 0.85,
-          stagger: 0.04,
+          duration: 0.5,
+          stagger: 0.015,
           ease: 'power3.out'
         });
       }
 
-      // The italic word "learns" arrives last with a thin underline that draws itself
+      // The italic word "learns" arrives with an underline that draws itself
       tl.fromTo('.hero-learn-line',
         { scaleX: 0 },
-        { scaleX: 1, duration: 0.7, ease: 'power3.inOut' },
+        { scaleX: 1, duration: 0.3, ease: 'power3.inOut' },
         '-=0.2'
       );
 
-      // Hero image reveals with a clip-path inset wipe while scaling from 1.2 to 1
-      if (heroImg?.src) {
-        tl.fromTo('.hero-photo-wrap',
-          { clipPath: isDesktop ? 'inset(100% 0% 0% 0%)' : 'inset(0% 0% 100% 0%)', opacity: 0 },
-          { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, duration: 1.1, ease: 'power3.inOut' },
-          '-=0.9'
-        )
-        .fromTo('.hero-photo-img',
-          { scale: 1.2 },
-          {
-            scale: 1,
-            duration: 1.2,
-            ease: 'power3.out',
-            onComplete: () => {
-              // Keep 60 fps: Remove will-change after animation completes
-              const img = document.querySelector('.hero-photo-img');
-              if (img) img.style.willChange = 'auto';
-            }
-          },
-          '-=1.1'
+      // Women's arch reveals with a bottom wipe
+      tl.fromTo('.hero-arch-frame-women',
+        { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0 },
+        { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, duration: 0.55, ease: 'power3.inOut' },
+        '-=0.3'
+      )
+        .fromTo('.hero-arch-img-women',
+          { scale: 1.06 },
+          { scale: 1, duration: 0.6, ease: 'power3.out' },
+          '-=0.55'
         );
-      }
 
-      // The hours and address strip fades up after the headline
+      // Men's arch reveals about 0.12s later
+      tl.fromTo('.hero-arch-frame-men',
+        { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0 },
+        { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, duration: 0.55, ease: 'power3.inOut' },
+        '<+=0.12'
+      )
+        .fromTo('.hero-arch-img-men',
+          { scale: 1.06 },
+          { scale: 1.04, duration: 0.6, ease: 'power3.out' },
+          '-=0.55'
+        );
+
+      // Arch captions and seal badge fade in
+      tl.to('.hero-arch-caption, .hero-seal-badge', {
+        opacity: 1,
+        duration: 0.3,
+        ease: 'power2.out'
+      }, '-=0.25');
+
+      // Supporting paragraph & CTAs fade up
       tl.to('.hero-meta-fade', {
         opacity: 1,
         y: 0,
-        duration: 0.7,
-        stagger: 0.08,
+        duration: 0.3,
+        stagger: 0.03,
         ease: 'power2.out'
-      }, '-=0.5');
+      }, '-=0.25');
 
-      // Desktop: mouse movement parallax (max 12px) & scroll parallax (image scales down, headline moves faster)
-      if (isDesktop && imageFrameRef.current) {
+      // The real-time status and info strip fades up last
+      tl.to('.hero-info-strip', {
+        opacity: 1,
+        y: 0,
+        duration: 0.3,
+        ease: 'power2.out'
+      }, '-=0.2');
+
+      // Desktop subtle mouse parallax (max 6px opposite directions, disabled on touch/fine pointer absent)
+      const hasFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      if (isDesktop && hasFinePointer && visualRef.current) {
         const handleMouseMove = (e) => {
           const { clientX, clientY } = e;
-          const x = (clientX / window.innerWidth - 0.5) * -12;
-          const y = (clientY / window.innerHeight - 0.5) * -12;
-          gsap.to('.hero-photo-img', {
-            x,
-            y,
-            duration: 0.6,
+          // Normalized -0.5 to +0.5, clamped to max ±6px
+          const rawX = (clientX / window.innerWidth - 0.5) * 12;
+          const rawY = (clientY / window.innerHeight - 0.5) * 12;
+          const x = Math.max(-6, Math.min(6, rawX));
+          const y = Math.max(-6, Math.min(6, rawY));
+
+          gsap.to('.hero-arch-women', {
+            x: x,
+            y: y,
+            duration: 0.8,
+            ease: 'power2.out',
+            overwrite: 'auto'
+          });
+
+          gsap.to('.hero-arch-men', {
+            x: -x,
+            y: -y,
+            duration: 0.8,
             ease: 'power2.out',
             overwrite: 'auto'
           });
         };
 
         window.addEventListener('mousemove', handleMouseMove);
-
-        // On scroll, headline moves faster than image, and image scales down
-        gsap.to('.hero-left-inner', {
-          y: -70,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: heroRef.current,
-            start: 'top top',
-            end: 'bottom top',
-            scrub: true
-          }
-        });
-
-        gsap.to('.hero-photo-img', {
-          scale: 0.94,
-          y: 40,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: heroRef.current,
-            start: 'top top',
-            end: 'bottom top',
-            scrub: true
-          }
-        });
 
         return () => {
           window.removeEventListener('mousemove', handleMouseMove);
@@ -133,24 +155,18 @@ export const Hero = () => {
     });
 
     return () => mm.revert();
-  }, [heroImg?.src]);
+  }, [heroImg?.src, secondaryImg?.src]);
 
   return (
     <section id="hero" className="hero-section" ref={heroRef} aria-labelledby="hero-title">
-      <div className="hero-split-layout">
-        {/* Left: Headline, Masked Reveal, Supporting Line & Actions */}
-        <div className="hero-left-pane">
-          <div className="hero-left-inner">
-            <div className="hero-meta-fade" style={{ marginBottom: '1.25rem' }}>
-              <span className="section-label" style={{ marginBottom: 0 }}>
-                {heroData.eyebrow}
-              </span>
-            </div>
-
-            <h1 id="hero-title" className="hero-h1">
-              <span>{heroData.headlineLine1}</span>
-              <br />
-              <span>
+      <div className="container hero-container">
+        <div className="hero-grid">
+          {/* Top Left: Headline, Sub, and CTAs */}
+          <div className="hero-copy-block">
+            <h1 id="hero-title" className="hero-h1" tabIndex="0">
+              <span className="hero-title-line">Where Akola gets</span>
+              <span className="hero-title-line">its hair done,</span>
+              <span className="hero-title-line">
                 and{' '}
                 <span className="hero-learns-wrapper">
                   <span className="italic-serif">{heroData.headlineEmphasised}</span>
@@ -164,95 +180,247 @@ export const Hero = () => {
               {heroData.sub}
             </p>
 
-            {/* Actions: "Enquire on WhatsApp", "Explore the academy" */}
+            {/* CTAs: Primary WhatsApp + Secondary Academy (52px height) */}
             <div className="hero-actions-row hero-meta-fade">
               <a
                 href={siteData.links.whatsappGeneral}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-primary"
-                aria-label="Enquire on WhatsApp"
+                className="btn btn-primary hero-btn"
+                aria-label="Book a consultation on WhatsApp"
               >
                 <span>{heroData.ctaPrimary}</span>
-                <span className="btn-arrow">→</span>
+                <span className="btn-arrow" aria-hidden="true">→</span>
               </a>
 
               <a
                 href="#academy"
-                className="btn btn-secondary"
+                className="btn btn-secondary hero-btn"
                 aria-label="Explore the academy"
               >
                 <span>{heroData.ctaSecondary}</span>
-                <span className="btn-arrow">↓</span>
+                <span className="btn-arrow" aria-hidden="true">↓</span>
               </a>
             </div>
 
-            {/* Verified Location & Hours Metadata Strip */}
-            <div className="hero-footer-facts hero-meta-fade">
-              <div>
-                <span className="editorial-mini-label">Hours</span>
-                <span className="editorial-mini-val">{siteData.hours.days}: {siteData.hours.time}</span>
+            {/* Optional Social Proof Line: rendered ONLY when real owner data with confirmed: true is supplied */}
+            {heroData.proof?.confirmed && (
+              <a
+                href={siteData.links.googleMaps}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hero-social-proof hero-meta-fade"
+                aria-label={`${heroData.proof.rating} out of 5 stars from ${heroData.proof.count} Google reviews`}
+              >
+                <span className="hero-proof-stars" aria-hidden="true">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} viewBox="0 0 20 20" className="hero-star-icon" fill="currentColor">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </span>
+                <span className="hero-proof-rating">{heroData.proof.rating}</span>
+                <span className="hero-proof-text">from {heroData.proof.count} Google reviews</span>
+              </a>
+            )}
+          </div>
+
+          {/* Right Column (or Middle on Tablet/Mobile): Composed Two Matching Arches */}
+          <div className="hero-visual-block" ref={visualRef}>
+            <div className="hero-arch-item hero-arch-women">
+              <div className="hero-arch-frame hero-arch-frame-women">
+                <img
+                  src={heroImg.src}
+                  alt={heroImg.alt}
+                  width="600"
+                  height="840"
+                  className="hero-arch-img hero-arch-img-women"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="async"
+                />
               </div>
-              <div>
-                <span className="editorial-mini-label">Address</span>
-                <span className="editorial-mini-val">Blackberry Complex, Necklace Road, Akola</span>
+              <div className="hero-arch-caption">
+                <span className="hero-caption-rule" aria-hidden="true" />
+                <span className="hero-caption-text">Women’s salon</span>
+              </div>
+            </div>
+
+            <div className="hero-arch-item hero-arch-men">
+              <div className="hero-arch-frame hero-arch-frame-men">
+                <img
+                  src={secondaryImg.src}
+                  alt={secondaryImg.alt}
+                  width="500"
+                  height="667"
+                  className="hero-arch-img hero-arch-img-men"
+                  loading="eager"
+                  decoding="async"
+                />
+              </div>
+              <div className="hero-arch-caption">
+                <span className="hero-caption-rule" aria-hidden="true" />
+                <span className="hero-caption-text">Men’s studio</span>
+              </div>
+            </div>
+
+            {/* Decorative Rotating Seal placed on seam at lower third (never covering face) */}
+            <div className="hero-seal-badge" aria-hidden="true">
+              <svg viewBox="0 0 120 120" className="hero-seal-svg">
+                <path
+                  id="hero-seal-circle-path"
+                  d="M 60,60 m -43,0 a 43,43 0 1,1 86,0 a 43,43 0 1,1 -86,0"
+                  fill="none"
+                />
+                <text
+                  fontFamily="var(--font-sans)"
+                  fontSize="8.4"
+                  fontWeight="600"
+                  letterSpacing="0.22em"
+                  fill="var(--color-text)"
+                >
+                  <textPath href="#hero-seal-circle-path" startOffset="0%">
+                    SALON · ACADEMY · AKOLA · HAIR STUDIO ·
+                  </textPath>
+                </text>
+              </svg>
+              <span className="hero-seal-center">HC</span>
+            </div>
+          </div>
+
+          {/* Bottom Left (or Bottom on Tablet/Mobile): Info Strip separated by single hairline */}
+          <div className="hero-info-strip">
+            <div className="hero-info-col hero-info-col-1">
+              <span className="hero-info-label">Today</span>
+              <div className="hero-info-value hero-status-row">
+                <span
+                  className={`status-indicator-dot ${businessStatus.isOpen ? 'is-open' : 'is-closed'}`}
+                  aria-hidden="true"
+                />
+                <span className="hero-status-text">
+                  {businessStatus.isOpen
+                    ? `Open · ${siteData.hours.time}`
+                    : `Closed · ${siteData.hours.time}`}
+                </span>
+              </div>
+            </div>
+
+            <div className="hero-info-col hero-info-col-2">
+              <span className="hero-info-label">Find us</span>
+              <div className="hero-info-value">
+                <span className="hero-location-val">Necklace Road, Akola</span>
+              </div>
+            </div>
+
+            <div className="hero-info-col hero-info-col-3">
+              <span className="hero-info-label">Explore</span>
+              <div className="hero-info-value hero-explore-links">
+                <a href="#services" className="hero-explore-link">
+                  <span>The salon</span>
+                  <span className="hero-explore-arrow" aria-hidden="true">→</span>
+                </a>
+                <a href="#academy" className="hero-explore-link">
+                  <span>The academy</span>
+                  <span className="hero-explore-arrow" aria-hidden="true">→</span>
+                </a>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right: Full-height Tall Image cropped with object-fit: cover */}
-        <div className="hero-right-pane" ref={imageFrameRef}>
-          {heroImg?.src && (
-            <div className="hero-photo-wrap">
-              <img
-                src={heroImg.src}
-                alt={heroImg.alt}
-                width="800"
-                height="1000"
-                className="hero-photo-img"
-                loading="eager"
-              />
-            </div>
-          )}
+        {/* Decorative Scroll Cue (desktop and tablet, hidden on mobile & compact heights) */}
+        <div className="hero-scroll-cue" aria-hidden="true">
+          <span className="hero-scroll-label">Scroll</span>
+          <div className="hero-scroll-track">
+            <span className="hero-scroll-dot" />
+          </div>
         </div>
       </div>
 
       <style>{`
         .hero-section {
+          position: relative;
           width: 100%;
-          min-height: calc(100vh - var(--header-height));
-          background: var(--color-bg);
+          min-height: calc(100svh - var(--header-height));
+          background-color: var(--color-bg);
           border-bottom: 1px solid var(--color-border);
           overflow: hidden;
-        }
-
-        .hero-split-layout {
-          width: 100%;
-          display: grid;
-          grid-template-columns: 1.15fr 0.85fr;
-          min-height: calc(100vh - var(--header-height));
-        }
-
-        .hero-left-pane {
           display: flex;
-          align-items: center;
-          padding: clamp(2.5rem, 6vw, 6rem) clamp(1.5rem, 5vw, 4.5rem);
-          border-right: 1px solid var(--color-border);
+          flex-direction: column;
+          justify-content: center;
+          padding-block: clamp(2rem, 5vh, 4rem);
         }
 
-        .hero-left-inner {
-          max-width: 640px;
+        .hero-container {
           width: 100%;
         }
 
+        /* Two-column layout on Desktop >= 1024px */
+        .hero-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+          grid-template-rows: auto auto;
+          grid-template-areas:
+            "copy   visual"
+            "strip  visual";
+          column-gap: clamp(1.5rem, 3vw, 3rem);
+          align-items: center;
+        }
+
+       
+
+        .hero-copy-block {
+          grid-area: copy;
+          max-width: 660px;
+          width: 100%;
+        }
+
+        .hero-visual-block {
+          grid-area: visual;
+          position: relative;
+          display: flex;
+          align-items: flex-start;
+          justify-content: flex-start;
+          justify-self: end;
+          gap: clamp(12px, 1.5vw, 16px);
+          width: 100%;
+          max-width: 640px;
+          margin-left: auto;
+          max-height: calc(100svh - var(--header-height) - 4rem);
+        }
+
+        .hero-info-strip {
+          grid-area: strip;
+          border-top: 1px solid var(--color-border);
+          padding-top: clamp(1.25rem, 2.5vh, 1.75rem);
+          margin-top: clamp(2rem, 4vh, 3.25rem);
+          display: grid;
+        grid-template-columns: auto auto auto;
+justify-content: space-between;
+          align-items: stretch;
+          max-width: 660px;
+          width: 100%;
+        }
+
+        /* Headline: 3 deliberate lines on desktop */
         .hero-h1 {
           font-family: var(--font-serif);
-          font-size: clamp(2.5rem, 6.5vw, 5.25rem);
+          font-size: clamp(2.75rem, 4.4vw, 4.65rem);
           line-height: 1.05;
-          margin-bottom: 1.5rem;
+          letter-spacing: -0.01em;
+          text-wrap: balance;
           color: var(--color-text);
-          overflow: hidden;
+          margin-bottom: clamp(1.4rem, 2.6vh, 2rem);
+        }
+
+        .hero-h1:focus-visible {
+          outline: 2px solid var(--color-accent);
+          outline-offset: 6px;
+          border-radius: 2px;
+        }
+
+        .hero-title-line {
+          display: block;
         }
 
         .hero-split-line {
@@ -276,99 +444,671 @@ export const Hero = () => {
         }
 
         .hero-sub {
-          font-size: clamp(1.05rem, 1.4vw, 1.25rem);
-          color: var(--color-muted);
-          margin-bottom: 2.25rem;
-          line-height: 1.5;
-          max-width: 48ch;
+          font-family: var(--font-sans);
+          font-size: clamp(1rem, 1.25vw, 1.125rem);
+          font-weight: 400;
+          color: #38332F;
+          line-height: 1.6;
+          max-width: 44ch;
+          text-wrap: pretty;
+          text-wrap: balance;
+          margin-bottom: clamp(1.85rem, 3.6vh, 2.75rem);
         }
 
         .hero-actions-row {
           display: flex;
-          flex-wrap: wrap;
-          gap: 1rem;
-          margin-bottom: 3.5rem;
+          align-items: center;
+          gap: clamp(12px, 1.5vw, 16px);
         }
 
-        .hero-footer-facts {
-          display: flex;
-          gap: 2.5rem;
-          flex-wrap: wrap;
-          padding-top: 1.75rem;
-          border-top: 1px solid var(--color-border);
+        .hero-btn {
+          height: 52px;
+          min-height: 52px;
+          padding: 0 1.85rem;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: var(--size-small);
+          box-sizing: border-box;
         }
 
-        .editorial-mini-label {
-          display: block;
-          font-size: var(--size-micro);
-          text-transform: uppercase;
-          letter-spacing: 0.16em;
+        /* Optional Quiet Social Proof Line Under CTAs */
+        .hero-social-proof {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-top: 1rem;
+          min-height: 44px;
+          font-family: var(--font-sans);
+          font-size: 13px;
           color: var(--color-muted);
-          margin-bottom: 3px;
+          text-decoration: none;
+          transition: color 0.2s ease;
         }
 
-        .editorial-mini-val {
-          display: block;
-          font-size: 0.875rem;
-          font-weight: 500;
+        .hero-social-proof:hover,
+        .hero-social-proof:focus-visible {
           color: var(--color-text);
         }
 
-        .hero-right-pane {
+        .hero-proof-stars {
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          color: var(--color-accent);
+        }
+
+        .hero-star-icon {
+          width: 14px;
+          height: 14px;
+        }
+
+        .hero-proof-rating {
+          font-weight: 600;
+          color: var(--color-text);
+        }
+
+        /* Two Matching Arches */
+        .hero-arch-item {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .hero-arch-women {
+          width: calc(56% - 8px);
+          flex: 0 0 calc(56% - 8px);
+        }
+
+        .hero-arch-men {
+          width: calc(44% - 8px);
+          flex: 0 0 calc(44% - 8px);
+          margin-top: 12%;
+        }
+
+        .hero-arch-frame {
           position: relative;
           width: 100%;
-          height: 100%;
-          min-height: 480px;
-          background: var(--color-surface);
+          aspect-ratio: 3 / 4.15;
+          border-radius: 999px 999px 0 0;
+          border: 1px solid var(--color-border);
+          background-color: var(--color-surface);
+          padding: 0;
           overflow: hidden;
+          box-shadow: 0 16px 40px rgba(25, 22, 20, 0.05);
         }
 
-        .hero-photo-wrap {
+        .hero-arch-frame-men {
+          background-color: #74716e;
+        }
+
+        /* Warm tone terracotta/cream gradient overlay across both portraits */
+        .hero-arch-frame::after {
+          content: '';
           position: absolute;
           inset: 0;
-          width: 100%;
-          height: 100%;
-          overflow: hidden;
+          pointer-events: none;
+          background: linear-gradient(
+            180deg,
+            rgba(164, 104, 67, 0.07) 0%,
+            rgba(251, 249, 245, 0.03) 50%,
+            rgba(164, 104, 67, 0.09) 100%
+          );
+          mix-blend-mode: normal;
+          border-radius: inherit;
+          z-index: 2;
         }
 
-        .hero-photo-img {
+        .hero-arch-img {
           width: 100%;
           height: 100%;
           object-fit: cover;
           display: block;
           will-change: transform;
+          filter: saturate(0.95) contrast(1.02);
         }
 
-        @media (max-width: 960px) {
-          .hero-split-layout {
-            grid-template-columns: 1fr;
-            display: flex;
-            flex-direction: column;
+        .hero-arch-img-women {
+          object-position: 50% 30%;
+        }
+
+        .hero-arch-img-men {
+        object-position: 50% 8%;
+transform: none;
+        }
+
+        .hero-arch-caption {
+          display: flex;
+          align-items: center;
+          gap: 0.55rem;
+          margin-top: 0.85rem;
+          align-self: flex-start;
+        }
+
+        .hero-caption-rule {
+          width: 24px;
+          height: 1px;
+          background-color: var(--color-border);
+          flex-shrink: 0;
+        }
+
+        .hero-caption-text {
+          font-family: var(--font-sans);
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: var(--color-muted);
+          white-space: nowrap;
+        }
+
+        /* Rotating Seal on Seam at lower third */
+        .hero-seal-badge {
+          position: absolute;
+          left: calc(56% - 8px);
+          top: 65%;
+          transform: translate(-50%, -50%);
+          width: 92px;
+          height: 92px;
+          border-radius: 50%;
+          background: var(--color-bg);
+          border: 1px solid var(--color-border);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 5;
+          pointer-events: none;
+          box-shadow: 0 6px 20px rgba(25, 22, 20, 0.06);
+        }
+
+        .hero-seal-svg {
+          width: 100%;
+          height: 100%;
+          animation: heroSealRotate 28s linear infinite;
+          transform-origin: center center;
+          will-change: transform;
+        }
+
+        .hero-seal-center {
+          position: absolute;
+          font-family: var(--font-serif);
+          font-style: italic;
+          font-size: 1.25rem;
+          color: var(--color-accent);
+          line-height: 1;
+          user-select: none;
+        }
+
+        @keyframes heroSealRotate {
+          from {
+            transform: rotate(0deg);
           }
-          .hero-right-pane {
-            order: -1;
-            height: clamp(260px, 42vw, 360px);
-            min-height: auto;
-            border-bottom: 1px solid var(--color-border);
+          to {
+            transform: rotate(360deg);
           }
-          .hero-left-pane {
-            border-right: none;
-            border-bottom: 1px solid var(--color-border);
-            padding: 2.25rem 1.25rem 2.75rem;
+        }
+
+        /* Info Strip Columns (Equal Widths & Full-Height Border Dividers) */
+        .hero-info-col {
+          display: flex;
+          flex-direction: column;
+          padding-inline: 1.25rem;
+          box-sizing: border-box;
+          justify-content: flex-start;
+        }
+
+        .hero-info-col-1 {
+          padding-left: 0;
+          padding-right: 1.25rem;
+        }
+
+        .hero-info-col-2 {
+          border-left: 1px solid var(--color-border);
+          padding-left: 1.25rem;
+          padding-right: 1.25rem;
+        }
+
+        .hero-info-col-3 {
+          border-left: 1px solid var(--color-border);
+          padding-left: 1.25rem;
+          padding-right: 0;
+        }
+
+        .hero-info-label {
+          font-family: var(--font-sans);
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: var(--color-muted);
+          line-height: 1;
+          margin-bottom: 0.5rem;
+        }
+
+        .hero-info-value {
+          font-family: var(--font-sans);
+          font-size: 15px;
+          font-weight: 500;
+          color: var(--color-text);
+          line-height: 1.4;
+          display: flex;
+          align-items: center;
+          min-height: 24px;
+        }
+
+        .hero-status-row {
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+          white-space: nowrap;
+        }
+
+        .hero-status-text {
+          font-size: 14.5px;
+          font-variant-numeric: tabular-nums;
+          letter-spacing: -0.015em;
+          white-space: nowrap;
+        }
+
+        .hero-location-val {
+          white-space: nowrap;
+          font-size: 15px;
+        }
+
+        .status-indicator-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          display: inline-block;
+          flex-shrink: 0;
+        }
+
+        .status-indicator-dot.is-open {
+          background-color: #2E7D32;
+          box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+          animation: statusDotPulse 2.4s infinite ease-in-out;
+        }
+
+        .status-indicator-dot.is-closed {
+          background-color: #A46843;
+        }
+
+        @keyframes statusDotPulse {
+          0%, 100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.25);
+            opacity: 0.75;
+          }
+        }
+
+        .hero-explore-links {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 14px;
+          white-space: nowrap;
+        }
+
+        .hero-explore-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          color: var(--color-text);
+          text-decoration: none;
+          transition: color 0.2s ease;
+          white-space: nowrap;
+          font-size: 14px;
+          font-weight: 500;
+          min-height: 24px;
+        }
+
+        .hero-explore-link:hover,
+        .hero-explore-link:focus-visible {
+          color: var(--color-accent);
+        }
+
+        .hero-explore-arrow {
+          display: inline-block;
+          font-size: 0.85em;
+          transition: transform 0.2s ease;
+        }
+
+        .hero-explore-link:hover .hero-explore-arrow,
+        .hero-explore-link:focus-visible .hero-explore-arrow {
+          transform: translateX(3px);
+        }
+
+        /* Compact desktop screen height handling (e.g. 1366x768) */
+        @media (max-height: 820px) and (min-width: 1280px) {
+          .hero-section {
+            padding-block: 1.25rem;
           }
           .hero-h1 {
-            font-size: clamp(2.1rem, 11vw, 3.4rem);
-            max-width: 100%;
-            overflow-wrap: break-word;
-            word-wrap: break-word;
-            hyphens: auto;
-            margin-bottom: 1rem;
+            font-size: clamp(2.35rem, 4vw, 3.85rem);
+            margin-bottom: 0.85rem;
           }
           .hero-sub {
-            margin-bottom: 1.75rem;
+            margin-bottom: 1.15rem;
           }
           .hero-actions-row {
-            margin-bottom: 2.25rem;
+            margin-bottom: 0;
+          }
+          .hero-visual-block {
+            max-width: 480px;
+          }
+          .hero-seal-badge {
+            top: 66%;
+            width: 84px;
+            height: 84px;
+          }
+          .hero-info-strip {
+            margin-top: 1.25rem;
+            padding-top: 0.85rem;
+          }
+        }
+
+        /* TABLET (640px – 1023px): Single Column Flow */
+        @media (min-width: 640px) and (max-width: 1279px) {
+          .hero-section {
+            min-height: auto;
+            padding-block: clamp(2.5rem, 6vh, 4rem);
+          }
+
+          .hero-grid {
+            display: flex;
+            flex-direction: column;
+            grid-template-columns: 1fr;
+            grid-template-areas: none;
+            gap: 0;
+          }
+
+          .hero-copy-block {
+            order: 1;
+            max-width: 100%;
+          }
+
+          .hero-h1 {
+            font-size: clamp(2.5rem, 6.5vw, 4.25rem);
+            margin-bottom: 1.25rem;
+          }
+
+          .hero-sub {
+            max-width: 52ch;
+            margin-bottom: 1.75rem;
+          }
+
+          .hero-actions-row {
+            margin-bottom: 0;
+          }
+
+          .hero-visual-block {
+            order: 2;
+            max-width: 540px;
+            margin: clamp(2.5rem, 5vh, 3.5rem) auto;
+            align-self: center;
+          }
+
+          .hero-arch-men {
+            margin-top: 8%;
+          }
+
+          .hero-seal-badge {
+            top: 64%;
+          }
+
+          .hero-info-strip {
+            order: 3;
+            max-width: 100%;
+            margin-top: 0;
+            padding-top: 1.75rem;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-items: stretch;
+          }
+        }
+
+        /* MOBILE (< 640px): Compact, Single Column, Stacked CTAs & Info */
+        @media (max-width: 639px) {
+          .hero-section {
+            min-height: auto;
+            padding-block: 2rem 2.5rem;
+          }
+
+          .hero-grid {
+            display: flex;
+            flex-direction: column;
+            grid-template-columns: 1fr;
+            grid-template-areas: none;
+            gap: 0;
+          }
+
+          .hero-copy-block {
+            order: 1;
+            max-width: 100%;
+          }
+
+          .hero-h1 {
+            font-size: clamp(2.2rem, 9.8vw, 3.1rem);
+            line-height: 1.08;
+            letter-spacing: -0.015em;
+            text-wrap: balance;
+            margin-bottom: 1.15rem;
+          }
+
+          .hero-sub {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+          }
+
+          .hero-actions-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+          }
+
+          .hero-actions-row .hero-btn {
+            width: 100%;
+            height: 48px;
+            min-height: 48px;
+            justify-content: center;
+          }
+
+          /* Two-arch visual smaller side-by-side, staggered ~8% */
+          .hero-visual-block {
+            order: 2;
+            width: 100%;
+            max-width: 360px;
+            margin: 2.25rem auto 2rem;
+            align-self: center;
+            gap: 12px;
+          }
+
+          .hero-arch-women {
+            width: calc(56% - 6px);
+            flex: 0 0 calc(56% - 6px);
+          }
+
+          .hero-arch-men {
+            width: calc(44% - 6px);
+            flex: 0 0 calc(44% - 6px);
+            margin-top: 8%;
+          }
+
+          .hero-seal-badge {
+            width: 72px;
+            height: 72px;
+            left: calc(56% - 6px);
+            top: 60%;
+          }
+
+          .hero-seal-center {
+            font-size: 1.05rem;
+          }
+
+          .hero-caption-text {
+            font-size: 11px;
+          }
+
+          /* Info strip single column with row hairlines */
+          .hero-info-strip {
+            order: 3;
+            max-width: 100%;
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+          }
+
+          .hero-info-col {
+            padding: 0.85rem 0;
+            padding-inline: 0;
+            border-left: none;
+            border-top: 1px solid var(--color-border);
+            gap: 0.35rem;
+          }
+
+          .hero-info-col-1 {
+            border-top: 1px solid var(--color-border);
+            padding-right: 0;
+          }
+
+          .hero-info-col-2,
+          .hero-info-col-3 {
+            border-left: none;
+            padding-left: 0;
+            padding-right: 0;
+          }
+
+          .hero-explore-links {
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-top: 0.2rem;
+          }
+
+          .hero-explore-link {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+          }
+        }
+
+        /* Decorative Scroll Cue (desktop and tablet, aria-hidden) */
+        .hero-scroll-cue {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.45rem;
+          z-index: 10;
+          pointer-events: none;
+          user-select: none;
+        }
+
+        .hero-scroll-label {
+          font-family: var(--font-sans);
+          font-size: 9.5px;
+          font-weight: 600;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: var(--color-muted);
+          line-height: 1;
+        }
+
+        .hero-scroll-track {
+          width: 1px;
+          height: 38px;
+          background-color: var(--color-border);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .hero-scroll-dot {
+          position: absolute;
+          top: 0;
+          left: -1.5px;
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          background-color: var(--color-accent);
+          animation: heroScrollDotAnim 2.4s ease-in-out infinite;
+        }
+
+        @keyframes heroScrollDotAnim {
+          0% {
+            transform: translateY(0);
+            opacity: 0;
+          }
+          20% {
+            opacity: 1;
+          }
+          75% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(34px);
+            opacity: 0;
+          }
+        }
+
+        @media (min-width: 1280px) {
+          .hero-scroll-cue {
+            position: absolute;
+            bottom: clamp(1rem, 2vh, 1.75rem);
+            left: 50%;
+            transform: translateX(-50%);
+          }
+        }
+
+        @media (min-width: 640px) and (max-width: 1279px) {
+          .hero-scroll-cue {
+            position: relative;
+            margin-top: 2rem;
+            margin-inline: auto;
+          }
+        }
+
+        @media (max-width: 639px) {
+          .hero-scroll-cue {
+            display: none;
+          }
+        }
+
+        @media (max-height: 760px) {
+          .hero-scroll-cue {
+            display: none;
+          }
+        }
+
+        /* Fallback & Reduced Motion: Ensure all elements are fully visible if JS fails, scripting is disabled, or reduced motion is active */
+        @media (prefers-reduced-motion: reduce), (scripting: none) {
+          .hero-meta-fade,
+          .hero-arch-frame,
+          .hero-arch-frame-women,
+          .hero-arch-frame-men,
+          .hero-arch-caption,
+          .hero-seal-badge,
+          .hero-info-strip,
+          .hero-learn-line {
+            opacity: 1 !important;
+            clip-path: none !important;
+            transform: none !important;
+          }
+          .hero-seal-svg {
+            animation: none;
+          }
+          .status-indicator-dot.is-open {
+            animation: none;
+          }
+          .hero-scroll-dot {
+            animation: none;
+            transform: translateY(16px);
+            opacity: 0.8;
           }
         }
       `}</style>

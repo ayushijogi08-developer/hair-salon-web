@@ -63,14 +63,14 @@ export const Footer = () => {
           {/* Quick Contact Col */}
           <div>
             <span className="editorial-label" style={{ marginBottom: '1rem' }}>Contact</span>
-            <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--color-text)' }}>
-              <strong>Phone:</strong> <a href={`tel:${siteData.phoneRaw}`} style={{ textDecoration: 'underline' }}>{siteData.phone}</a>
+            <p className="footer-contact-item" style={{ fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--color-text)' }}>
+              <strong>Phone:</strong> <a href={`tel:${siteData.phoneRaw}`} className="footer-contact-link" style={{ textDecoration: 'underline' }}>{siteData.phone}</a>
             </p>
-            <p style={{ fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--color-text)' }}>
-              <strong>WhatsApp:</strong> <a href={siteData.links.whatsappGeneral} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline' }}>Enquire on WhatsApp</a>
+            <p className="footer-contact-item" style={{ fontSize: '0.875rem', marginBottom: '0.5rem', color: 'var(--color-text)' }}>
+              <strong>WhatsApp:</strong> <a href={siteData.links.whatsappGeneral} target="_blank" rel="noopener noreferrer" className="footer-contact-link" style={{ textDecoration: 'underline' }}>Chat on WhatsApp</a>
             </p>
-            <p style={{ fontSize: '0.875rem', color: 'var(--color-text)' }}>
-              <strong>Instagram:</strong> <a href={siteData.links.instagram} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline' }}>@_hair_city_salon</a>
+            <p className="footer-contact-item" style={{ fontSize: '0.875rem', color: 'var(--color-text)' }}>
+              <strong>Instagram:</strong> <a href={siteData.links.instagram} target="_blank" rel="noopener noreferrer" className="footer-contact-link" style={{ textDecoration: 'underline' }}>@_hair_city_salon</a>
             </p>
           </div>
 

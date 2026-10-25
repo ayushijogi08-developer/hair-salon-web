@@ -8,11 +8,29 @@
  * 4. Images: use only files in src/assets/images/. Never use stock photos.
  */
 
-const imageModules = import.meta.glob('../assets/images/*.jpg', { eager: true });
+const imageModules = import.meta.glob('../assets/images/*.{jpg,jpeg,png,webp}', { eager: true });
 
-function resolveImage(name) {
-  const match = Object.keys(imageModules).find(k => k.endsWith(name));
-  return match ? imageModules[match].default : null;
+function resolveImage(name, fallbackName = null) {
+  const findMatch = (target) => {
+    if (!target) return null;
+    return Object.keys(imageModules).find((k) => {
+      const filename = k.split('/').pop();
+      return filename === target || filename.startsWith(target + '.') || k.endsWith(target);
+    });
+  };
+
+  const match = findMatch(name);
+  if (match) return imageModules[match].default;
+  if (fallbackName) {
+    const fallbackMatch = findMatch(fallbackName);
+    return fallbackMatch ? imageModules[fallbackMatch].default : null;
+  }
+  return null;
+}
+
+export function whatsappFor(topic) {
+  const text = encodeURIComponent(`Hello Hair City, I'd like to book ${topic}.`);
+  return `https://wa.me/917057174147?text=${text}`;
 }
 
 export const siteData = {
@@ -26,6 +44,7 @@ export const siteData = {
     state: "Maharashtra",
     pincode: "444001",
     country: "India",
+    display: "Blackberry Complex, Necklace Road, Ranpise Nagar, Akola",
     full: "Ratanlal Plot, Blackberry Complex, Necklace Road, Ranpise Nagar, Akola, Maharashtra 444001"
   },
   phone: "+91 70571 74147",
@@ -52,9 +71,10 @@ export const siteData = {
     headlineLine1: "Where Akola gets its hair done,",
     headlineLine2: "and learns how.",
     headlineEmphasised: "learns",
-    sub: "Cuts, colour and treatments in the salon. Professional hair training in the academy. One address on Necklace Road.",
-    ctaPrimary: "Enquire on WhatsApp",
+    sub: "Cuts, colour and treatments in the salon. Professional hair training in the academy.",
+    ctaPrimary: "Book a consultation",
     ctaSecondary: "Explore the academy",
+    proof: null, // Populated ONLY when confirmed owner-supplied Google review metrics exist: { rating: 4.9, count: 120, confirmed: true }
     confirmed: false
   },
 
@@ -192,33 +212,34 @@ export const siteData = {
   // --- IMAGE ASSET MANIFEST ---
   images: {
     hero: {
-      src: resolveImage('girl-cut-04.jpg'),
-      alt: "Hair City Salon & Academy — signature face-framing haircut and layered styling in Akola"
+      src: resolveImage('hero.jpg', 'girl-cut-04.jpg'),
+      alt: "Client with layered dark hair styled at Hair City Salon, Akola",
+      focus: '50% 18%'
     },
     cutting: {
-      src: resolveImage('boy-cut-01.jpg'),
+      src: resolveImage('cutting-men.jpg', 'boy-cut-01.jpg'),
       alt: "Precision hair cutting, fade and styling craft at Hair City Salon, Akola",
       boyCut: {
-        src: resolveImage('boy-cut-01.jpg'),
-        alt: "Men's precision fade, pompadour and beard contouring",
+        src: resolveImage('cutting-men.jpg', 'boy-cut-01.jpg'),
+        alt: "Client with textured cut and styled fade at Hair City Salon, Akola",
         title: "Men's Precision Fade & Pompadour"
       },
       girlCut: {
-        src: resolveImage('girl-cut-01.jpg'),
+        src: resolveImage('cutting-women.jpg', 'girl-cut-01.jpg'),
         alt: "Women's multi-tier step layer haircut with curved blowout finish",
         title: "Women's Step Layer Cut & Blowout"
       }
     },
     colour: {
-      src: resolveImage('girl-cut-03.jpg'),
+      src: resolveImage('colour.jpg', 'girl-cut-03.jpg'),
       alt: "Bespoke caramel balayage and dimensional hair colour at Hair City Salon, Akola"
     },
     treatments: {
-      src: resolveImage('girl-cut-02.jpg'),
+      src: resolveImage('treatments.jpg', 'girl-cut-02.jpg'),
       alt: "Restorative hair therapy, deep silk conditioning and cascading feather layers at Hair City Salon, Akola"
     },
     academy: {
-      src: resolveImage('boy-cut-03.jpg'),
+      src: resolveImage('academy.jpg', 'boy-cut-03.jpg'),
       alt: "Hair City Academy student hands-on barbering and haircut styling training"
     },
     work: [
@@ -300,5 +321,81 @@ export const siteData = {
         featured: true
       }
     ].filter(img => img.src !== null)
-  }
+  },
+
+  // --- OPTIONAL BUSINESS ARRAYS (rendered ONLY when confirmed: true items exist) ---
+  // STRICT RULE: Never invent prices, reviews, team names, ratings, certificates, offers.
+  pricing: [
+    /* Example format:
+    {
+      id: "p1",
+      category: "Haircuts",
+      name: "Men's Precision Cut & Styling",
+      priceFrom: 300, // Number or null; renders "from ₹300" if provided
+      description: "Consultation, wash, cut and finish.",
+      confirmed: false
+    }
+    */
+  ],
+
+  team: [
+    /* Example format:
+    {
+      id: "t1",
+      name: "Stylist Name",
+      role: "Senior Stylist",
+      experience: "5+ years",
+      bio: "Specializing in precision cutting and creative colour.",
+      confirmed: false
+    }
+    */
+  ],
+
+  reviews: [
+    /* Example format:
+    {
+      id: "r1",
+      text: "Genuine review text...",
+      author: "Client Name",
+      source: "Google Review",
+      sourceUrl: "https://maps.google.com/?cid=9185693562963339062",
+      confirmed: false
+    }
+    */
+  ],
+
+  faq: [
+    /* Example format:
+    {
+      id: "f1",
+      question: "Do I need an appointment?",
+      answer: "Walk-ins are welcome, but appointments ensure your preferred time.",
+      confirmed: false
+    }
+    */
+  ],
+
+  academyDetails: null,
+  /* Example format when confirmed:
+  academyDetails: {
+    duration: "3 Months (Full-Time)",
+    feeRange: "Shared on enquiry",
+    nextBatch: "1st of every month",
+    certificate: "Professional Salon Certification",
+    confirmed: false
+  },
+  */
+
+  beforeAfter: [
+    /* Example format:
+    {
+      id: "ba-1",
+      title: "Caramel Balayage Transformation",
+      beforeSrc: "/assets/images/before.jpg",
+      afterSrc: "/assets/images/after.jpg",
+      category: "Colour",
+      confirmed: false
+    }
+    */
+  ]
 };

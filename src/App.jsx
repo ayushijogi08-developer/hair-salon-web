@@ -12,14 +12,21 @@ import { ServicesOverview } from './sections/ServicesOverview';
 import { CuttingSection } from './sections/CuttingSection';
 import { ColourSection } from './sections/ColourSection';
 import { TreatmentsSection } from './sections/TreatmentsSection';
+import { Pricing } from './sections/Pricing';
 import { Academy } from './sections/Academy';
 import { Work } from './sections/Work';
+import { BeforeAfter } from './sections/BeforeAfter';
+import { Team } from './sections/Team';
+import { Reviews } from './sections/Reviews';
+import { FAQ } from './sections/FAQ';
 import { Visit } from './sections/Visit';
 import { Footer } from './components/Footer';
 import { MobileStickyBar } from './components/MobileStickyBar';
+import { initMagnetic } from './lib/magnetic';
 
 // Register GSAP plugins
 gsap.registerPlugin(ScrollTrigger, Flip, SplitText);
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 export function App() {
   const [preloaderDone, setPreloaderDone] = useState(false);
@@ -80,6 +87,9 @@ export function App() {
     };
   }, []);
 
+  // Initialize desktop magnetic button interaction (independent of Lenis)
+  useEffect(() => initMagnetic('.btn-primary'), []);
+
   // Call ScrollTrigger.refresh() after all images load and on window load
   useEffect(() => {
     const handleLoad = () => {
@@ -139,8 +149,13 @@ export function App() {
         <CuttingSection />
         <ColourSection />
         <TreatmentsSection />
+        <Pricing />
         <Academy />
         <Work />
+        <BeforeAfter />
+        <Team />
+        <Reviews />
+        <FAQ />
         <Visit />
       </main>
       <Footer />

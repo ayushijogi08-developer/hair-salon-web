@@ -1,7 +1,7 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { siteData } from '../data/site';
-import { WordFillParagraph, SectionEyebrowRow } from '../components/MotionText';
+import { siteData, whatsappFor } from '../data/site';
+import { SectionEyebrowRow } from '../components/MotionText';
 
 export const ColourSection = () => {
   const data = siteData.colour;
@@ -10,7 +10,7 @@ export const ColourSection = () => {
   const imgFrameRef = useRef(null);
 
   useLayoutEffect(() => {
-    const mm = gsap.matchMedia(colourSectionRef);
+    const mm = gsap.matchMedia(colourSectionRef.current);
 
     mm.add({
       isDesktop: '(min-width: 901px)',
@@ -24,26 +24,22 @@ export const ColourSection = () => {
         return;
       }
 
-      // Stagger items with line drawing across
+      // Stagger process steps
       const tl = gsap.timeline({
         scrollTrigger: {
-          trigger: '.colour-items-list',
-          start: 'top 85%'
+          trigger: '.colour-process-list',
+          start: 'top 85%',
+          once: true
         }
       });
 
-      tl.from('.colour-item-row', {
+      tl.from('.colour-process-step', {
         x: 20,
         opacity: 0,
         duration: 0.65,
-        stagger: 0.08,
+        stagger: 0.1,
         ease: 'power3.out'
-      })
-      .fromTo('.colour-item-line',
-        { scaleX: 0 },
-        { scaleX: 1, duration: 0.7, stagger: 0.08, ease: 'power3.out' },
-        '-=0.5'
-      );
+      });
 
       // Mask reveal with inner parallax
       if (colourImg && imgFrameRef.current) {
@@ -56,7 +52,8 @@ export const ColourSection = () => {
             ease: 'power3.out',
             scrollTrigger: {
               trigger: imgFrameRef.current,
-              start: 'top 85%'
+              start: 'top 85%',
+              once: true
             },
             onComplete: () => {
               const img = document.querySelector('.colour-inner-img');
@@ -65,18 +62,16 @@ export const ColourSection = () => {
           }
         );
 
-        if (isDesktop) {
-          gsap.to('.colour-inner-img', {
-            yPercent: -8,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: imgFrameRef.current,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true
-            }
-          });
-        }
+        gsap.to('.colour-inner-img', {
+          yPercent: isDesktop ? -8 : -4,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: imgFrameRef.current,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true
+          }
+        });
       }
     });
 
@@ -100,6 +95,7 @@ export const ColourSection = () => {
                   height="1000"
                   className="colour-photo-img colour-inner-img"
                   loading="lazy"
+                  decoding="async"
                 />
               </div>
             </div>
@@ -110,35 +106,56 @@ export const ColourSection = () => {
               {data.title}
             </h2>
 
-            <WordFillParagraph style={{ marginBottom: '1.5rem', fontSize: 'clamp(1.15rem, 1.6vw, 1.4rem)', lineHeight: '1.45' }}>
-              {data.lead}
-            </WordFillParagraph>
-
-            <div className="colour-note-pill">
-              <span className="colour-note-label">Consultation First</span>
-              <p className="colour-note-text">{data.note}</p>
+            <div className="colour-process-header">
+              <span className="colour-process-badge">Consultation First</span>
+              <p className="colour-process-intro">
+                Three steps taken before any colour formulation touches your hair:
+              </p>
             </div>
 
-            <ul className="discipline-items-list colour-items-list" aria-label="Hair colour services">
-              {data.items.map((item, idx) => (
-                <li key={idx} className="discipline-item-row colour-item-row">
-                  <div className="discipline-item-content">
-                    <span className="discipline-item-bullet">—</span>
-                    <span className="discipline-item-text">{item}</span>
-                  </div>
-                  <div className="colour-item-line" aria-hidden="true"></div>
-                </li>
-              ))}
-            </ul>
+            {/* Consultation-First 3-Step Process using strictly site.js copy */}
+            <div className="colour-process-list" role="list">
+              <div className="colour-process-step">
+                <span className="colour-step-num">01</span>
+                <div className="colour-step-body">
+                  <h3 className="colour-step-title">Patch Test & Consultation</h3>
+                  <p className="colour-step-text">{data.note}</p>
+                </div>
+              </div>
+
+              <div className="colour-process-step">
+                <span className="colour-step-num">02</span>
+                <div className="colour-step-body">
+                  <h3 className="colour-step-title">Base & Undertone Planning</h3>
+                  <p className="colour-step-text">{data.lead}</p>
+                </div>
+              </div>
+
+              <div className="colour-process-step">
+                <span className="colour-step-num">03</span>
+                <div className="colour-step-body">
+                  <h3 className="colour-step-title">Custom Application & Aftercare</h3>
+                  <p className="colour-step-text">{data.items[3]}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Service spectrum chips */}
+            <div className="colour-disciplines-strip" aria-label="Colour service options">
+              <span className="colour-service-chip">{data.items[0]}</span>
+              <span className="colour-service-chip">{data.items[1]}</span>
+              <span className="colour-service-chip">{data.items[2]}</span>
+            </div>
 
             <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
               <a
-                href={siteData.links.whatsappGeneral}
+                href={whatsappFor("hair colour")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary"
+                aria-label="Ask about hair colour on WhatsApp"
               >
-                <span>Enquire about colour</span>
+                <span>Ask about colour</span>
                 <span className="btn-arrow">→</span>
               </a>
             </div>
@@ -175,69 +192,97 @@ export const ColourSection = () => {
           will-change: transform;
         }
 
-        .colour-note-pill {
-          margin-bottom: 2rem;
-          padding: 1.15rem 1.35rem;
-          background: var(--color-surface);
-          border-left: 3px solid var(--color-accent);
-          max-width: 44ch;
+        .colour-inner-img {
+          object-position: 50% 30%;
         }
 
-        .colour-note-label {
-          display: block;
+        .colour-process-header {
+          margin-bottom: 1.5rem;
+        }
+
+        .colour-process-badge {
+          display: inline-block;
           font-size: var(--size-micro);
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: var(--color-accent);
-          margin-bottom: 0.35rem;
           font-weight: 600;
+          margin-bottom: 0.35rem;
         }
 
-        .colour-note-text {
-          font-size: 0.9375rem;
-          color: var(--color-text);
+        .colour-process-intro {
+          font-size: 0.95rem;
+          color: var(--color-muted);
           margin: 0;
-          font-weight: 500;
+          line-height: 1.5;
         }
 
-        .discipline-items-list {
-          list-style: none;
+        .colour-process-list {
           display: flex;
           flex-direction: column;
-          border-top: 1px solid var(--color-border);
+          gap: 1rem;
+          margin-bottom: 1.75rem;
         }
 
-        .discipline-item-row {
-          position: relative;
-          padding: 1.15rem 0;
-        }
-
-        .discipline-item-content {
-          display: flex;
-          align-items: baseline;
+        .colour-process-step {
+          display: grid;
+          grid-template-columns: auto 1fr;
           gap: 1.25rem;
+          align-items: start;
+          padding: 1.15rem 1.35rem;
+          background: var(--color-surface);
+          border-left: 3px solid var(--color-accent);
+          transition: transform 0.25s ease;
         }
 
-        .colour-item-line {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 100%;
-          height: 1px;
-          background-color: var(--color-border-light);
-          transform-origin: left;
-          transform: scaleX(1);
+        .colour-process-step:hover {
+          transform: translateX(4px);
         }
 
-        .discipline-item-bullet {
-          color: var(--color-accent);
+        .colour-step-num {
           font-family: var(--font-serif);
+          font-size: 1.35rem;
+          color: var(--color-accent);
+          line-height: 1;
+          font-weight: 400;
         }
 
-        .discipline-item-text {
-          font-size: 1.05rem;
+        .colour-step-body {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .colour-step-title {
+          font-size: 0.95rem;
+          font-weight: 600;
           color: var(--color-text);
-          font-weight: 400;
+          margin: 0;
+          letter-spacing: -0.01em;
+        }
+
+        .colour-step-text {
+          font-size: 0.875rem;
+          color: var(--color-muted);
+          line-height: 1.5;
+          margin: 0;
+        }
+
+        .colour-disciplines-strip {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          padding-top: 0.5rem;
+        }
+
+        .colour-service-chip {
+          font-size: 0.8125rem;
+          color: var(--color-text);
+          background: var(--color-surface-elevated, #EAE3DA);
+          padding: 0.35rem 0.75rem;
+          border: 1px solid var(--color-border);
+          border-radius: 2px;
+          letter-spacing: 0.02em;
         }
 
         @media (max-width: 900px) {
@@ -249,7 +294,11 @@ export const ColourSection = () => {
             order: 2;
           }
           .colour-photo-frame {
-            aspect-ratio: 16/10;
+            aspect-ratio: 4/5;
+            max-height: 70svh;
+          }
+          .colour-inner-img {
+            object-position: 50% 30%;
           }
         }
       `}</style>

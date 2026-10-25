@@ -1,6 +1,6 @@
 import React, { useState, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { siteData } from '../data/site';
+import { siteData, whatsappFor } from '../data/site';
 import { WordFillParagraph, SectionEyebrowRow } from '../components/MotionText';
 
 export const CuttingSection = () => {
@@ -26,7 +26,7 @@ export const CuttingSection = () => {
   };
 
   useLayoutEffect(() => {
-    const mm = gsap.matchMedia(sectionRef);
+    const mm = gsap.matchMedia(sectionRef.current);
 
     mm.add({
       isDesktop: '(min-width: 901px)',
@@ -44,7 +44,8 @@ export const CuttingSection = () => {
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: '.cutting-items-list',
-          start: 'top 85%'
+          start: 'top 85%',
+          once: true
         }
       });
 
@@ -61,7 +62,7 @@ export const CuttingSection = () => {
         '-=0.5'
       );
 
-      // Mask reveal with inner parallax (moves 8% slower than frame)
+      // Mask reveal with inner parallax
       if (imgFrameRef.current) {
         gsap.fromTo('.cutting-photo-frame',
           { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0 },
@@ -72,7 +73,8 @@ export const CuttingSection = () => {
             ease: 'power3.out',
             scrollTrigger: {
               trigger: imgFrameRef.current,
-              start: 'top 85%'
+              start: 'top 85%',
+              once: true
             },
             onComplete: () => {
               const img = document.querySelector('.cutting-inner-img');
@@ -81,18 +83,16 @@ export const CuttingSection = () => {
           }
         );
 
-        if (isDesktop) {
-          gsap.to('.cutting-inner-img', {
-            yPercent: -8,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: imgFrameRef.current,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true
-            }
-          });
-        }
+        gsap.to('.cutting-inner-img', {
+          yPercent: isDesktop ? -8 : -4,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: imgFrameRef.current,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true
+          }
+        });
       }
     });
 
@@ -129,12 +129,13 @@ export const CuttingSection = () => {
 
             <div style={{ marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
               <a
-                href={siteData.links.whatsappGeneral}
+                href={whatsappFor("hair cutting and styling")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary"
+                aria-label="Book a haircut appointment on WhatsApp"
               >
-                <span>Enquire on WhatsApp</span>
+                <span>Book a cut</span>
                 <span className="btn-arrow">→</span>
               </a>
             </div>
@@ -143,11 +144,10 @@ export const CuttingSection = () => {
           {/* Right: Large Photo with Mask Reveal, Tabbed Showcase and Inner Parallax */}
           {currentCut?.src && (
             <div className="discipline-photo-pane" ref={imgFrameRef}>
-              <div className="cutting-tab-bar" role="tablist" aria-label="Select Boys or Girls haircut craft">
+              <div className="cutting-tab-bar" role="group" aria-label="Select Boys or Girls haircut craft">
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={activeTab === 'boys'}
+                  aria-pressed={activeTab === 'boys'}
                   className={`cutting-tab-pill ${activeTab === 'boys' ? 'active' : ''}`}
                   onClick={() => handleTabChange('boys')}
                 >
@@ -155,8 +155,7 @@ export const CuttingSection = () => {
                 </button>
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={activeTab === 'girls'}
+                  aria-pressed={activeTab === 'girls'}
                   className={`cutting-tab-pill ${activeTab === 'girls' ? 'active' : ''}`}
                   onClick={() => handleTabChange('girls')}
                 >
@@ -173,6 +172,7 @@ export const CuttingSection = () => {
                   height="1000"
                   className="discipline-photo-img cutting-inner-img"
                   loading="lazy"
+                  decoding="async"
                 />
                 <div className="cutting-photo-caption">
                   <span>{currentCut.title}</span>
@@ -299,13 +299,31 @@ export const CuttingSection = () => {
           z-index: 2;
         }
 
+        .cutting-inner-img {
+          object-position: 50% 15%;
+        }
+
         @media (max-width: 900px) {
           .discipline-grid-with-photo {
             grid-template-columns: 1fr;
             gap: 2.5rem;
           }
           .cutting-photo-frame {
-            aspect-ratio: 16/10;
+            aspect-ratio: 4/5;
+            max-height: 70svh;
+          }
+          .cutting-inner-img {
+            object-position: 50% 15%;
+          }
+        }
+
+        @media (pointer: coarse) {
+          .cutting-tab-pill {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1.25rem;
           }
         }
       `}</style>

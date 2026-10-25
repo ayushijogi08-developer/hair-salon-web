@@ -14,26 +14,31 @@ export const Academy = () => {
   // 1) ONE SOURCE OF TRUTH (0 to 3)
   const [activeIndex, setActiveIndex] = useState(0);
 
-  // References for queueing and animating
+  // References for step state and animating
   const currentIndexRef = useRef(0);
   const isTransitioningRef = useRef(false);
-  const queueRef = useRef([]);
-  const lastTransitionTimeRef = useRef(0);
   const goToRef = useRef(null);
   const scrollTriggerInstanceRef = useRef(null);
 
   useLayoutEffect(() => {
-    const mm = gsap.matchMedia(academySectionRef);
+    const mm = gsap.matchMedia(academySectionRef.current);
 
     mm.add({
       isDesktop: '(min-width: 861px)',
       isMobile: '(max-width: 860px)',
       reduceMotion: '(prefers-reduced-motion: reduce)'
     }, (context) => {
-      const { reduceMotion, isDesktop } = context.conditions;
+      const { reduceMotion, isDesktop, isMobile } = context.conditions;
 
       if (reduceMotion) {
         gsap.set('.academy-step-card, .academy-info-pane', { opacity: 1, y: 0, visibility: 'visible' });
+        gsap.set('.step-anim-text, .step-anim-desc, .step-anim-detail, .step-anim-title, .step-anim-phase-num, .step-anim-chip', { opacity: 1, y: 0 });
+        gsap.set('.step-anim-accent-line', { scaleY: 1 });
+        const allCards = document.querySelectorAll('.academy-step-card');
+        allCards.forEach(c => {
+          c.classList.add('is-active');
+          c.style.opacity = '1';
+        });
         return;
       }
 
@@ -67,308 +72,281 @@ export const Academy = () => {
       const cards = gsap.utils.toArray('.academy-step-card');
       const numSteps = data.modules.length;
 
-      // Clean Initial Setup for All Cards
-      cards.forEach((card, idx) => {
-        const pNum = card.querySelector('.step-anim-phase-num');
-        const t = card.querySelector('.step-anim-title');
-        const d = card.querySelector('.step-anim-desc');
-        const dt = card.querySelector('.step-anim-detail');
-        const al = card.querySelector('.step-anim-accent-line');
-        const ch = card.querySelectorAll('.step-anim-chip');
-        const bg = card.querySelector('.step-parallax-num');
+      if (isDesktop) {
+        let activeTimeline = null;
 
-        if (idx === 0) {
-          gsap.set(card, { opacity: 1, y: 0, autoAlpha: 1, visibility: 'visible', pointerEvents: 'auto' });
-          if (pNum) gsap.set(pNum, { yPercent: 0, y: 0, opacity: 1 });
-          if (t) gsap.set(t, { yPercent: 0, y: 0, opacity: 1 });
-          if (d) gsap.set(d, { y: 0, yPercent: 0, opacity: 1 });
-          if (dt) gsap.set(dt, { y: 0, yPercent: 0, opacity: 1 });
-          if (al) gsap.set(al, { scaleY: 1 });
-          if (ch && ch.length) gsap.set(ch, { opacity: 1, y: 0, yPercent: 0 });
-          if (bg) gsap.set(bg, { y: 0, opacity: 0.12 });
-        } else {
-          gsap.set(card, { opacity: 0, y: 0, autoAlpha: 0, visibility: 'hidden', pointerEvents: 'none' });
-        }
-      });
+        // Reset a card and all its child elements to a complete, visible resting state
+        const setCardRestingState = (card) => {
+          gsap.killTweensOf(card);
+          gsap.killTweensOf(card.querySelectorAll('*'));
+          gsap.set(card, {
+            autoAlpha: 1,
+            opacity: 1,
+            y: 0,
+            visibility: 'visible',
+            zIndex: 2,
+            pointerEvents: 'auto',
+            clearProps: 'transform'
+          });
 
-      const goTo = (targetIndex) => {
-        if (targetIndex === currentIndexRef.current) return;
-        const fromIndex = currentIndexRef.current;
-        const direction = targetIndex > fromIndex ? 1 : -1;
+          const pNum = card.querySelector('.step-anim-phase-num');
+          const t = card.querySelector('.step-anim-title');
+          const d = card.querySelector('.step-anim-desc');
+          const dt = card.querySelector('.step-anim-detail');
+          const al = card.querySelector('.step-anim-accent-line');
+          const ch = card.querySelectorAll('.step-anim-chip');
+          const bg = card.querySelector('.step-parallax-num');
 
-        isTransitioningRef.current = true;
-        currentIndexRef.current = targetIndex;
-        setActiveIndex(targetIndex); // ONE SOURCE OF TRUTH: Updates left list, counter, rail dot at same moment
+          if (pNum) gsap.set(pNum, { yPercent: 0, y: 0, opacity: 1, clearProps: 'transform' });
+          if (t) gsap.set(t, { yPercent: 0, y: 0, opacity: 1, clearProps: 'transform' });
+          if (d) gsap.set(d, { y: 0, yPercent: 0, opacity: 1, clearProps: 'transform' });
+          if (dt) gsap.set(dt, { y: 0, yPercent: 0, opacity: 1, clearProps: 'transform' });
+          if (al) gsap.set(al, { scaleY: 1, clearProps: 'transform' });
+          if (ch && ch.length) gsap.set(ch, { opacity: 1, y: 0, yPercent: 0, clearProps: 'transform' });
+          if (bg) gsap.set(bg, { y: 0, opacity: 0.12, clearProps: 'transform' });
+        };
 
-        const outgoing = cards[fromIndex];
-        const incoming = cards[targetIndex];
+        // Fully hide a card
+        const setCardHiddenState = (card) => {
+          gsap.killTweensOf(card);
+          gsap.killTweensOf(card.querySelectorAll('*'));
+          gsap.set(card, {
+            autoAlpha: 0,
+            opacity: 0,
+            y: 0,
+            visibility: 'hidden',
+            zIndex: 1,
+            pointerEvents: 'none'
+          });
+        };
 
-        // Kill running tweens on all steps and set bystanders to autoAlpha 0
-        cards.forEach((c, idx) => {
-          gsap.killTweensOf(c);
-          gsap.killTweensOf(c.querySelectorAll('*'));
-          if (idx !== fromIndex && idx !== targetIndex) {
-            gsap.set(c, { autoAlpha: 0, visibility: 'hidden', pointerEvents: 'none' });
+        // Clean Initial Setup for All Cards
+        cards.forEach((card, idx) => {
+          if (idx === currentIndexRef.current) {
+            setCardRestingState(card);
+          } else {
+            setCardHiddenState(card);
           }
         });
 
-        // Outgoing elements
-        const outPhaseNum = outgoing.querySelector('.step-anim-phase-num');
-        const outTitle = outgoing.querySelector('.step-anim-title');
-        const outDesc = outgoing.querySelector('.step-anim-desc');
-        const outDetail = outgoing.querySelector('.step-anim-detail');
-        const outAccentLine = outgoing.querySelector('.step-anim-accent-line');
-        const outChips = outgoing.querySelectorAll('.step-anim-chip');
-        const outBigNum = outgoing.querySelector('.step-parallax-num');
+        // Instant snap to target index for jumps > 1 step or re-entering section
+        const snapTo = (targetIndex) => {
+          if (activeTimeline) {
+            activeTimeline.kill();
+            activeTimeline = null;
+          }
 
-        // Incoming elements
-        const inPhaseNum = incoming.querySelector('.step-anim-phase-num');
-        const inTitle = incoming.querySelector('.step-anim-title');
-        const inDesc = incoming.querySelector('.step-anim-desc');
-        const inDetail = incoming.querySelector('.step-anim-detail');
-        const inAccentLine = incoming.querySelector('.step-anim-accent-line');
-        const inChips = incoming.querySelectorAll('.step-anim-chip');
-        const inBigNum = incoming.querySelector('.step-parallax-num');
+          cards.forEach((card, idx) => {
+            if (idx === targetIndex) {
+              setCardRestingState(card);
+            } else {
+              setCardHiddenState(card);
+            }
+          });
 
-        const tl = gsap.timeline({
-          onComplete: () => {
-            // Reset all transform properties on the outgoing card so it's clean for future steps
-            gsap.set(outgoing, { autoAlpha: 0, visibility: 'hidden', pointerEvents: 'none' });
-            if (outPhaseNum) gsap.set(outPhaseNum, { yPercent: 0, y: 0, clearProps: 'transform' });
-            if (outTitle) gsap.set(outTitle, { yPercent: 0, y: 0, clearProps: 'transform' });
-            if (outDesc) gsap.set(outDesc, { y: 0, yPercent: 0, clearProps: 'transform' });
-            if (outDetail) gsap.set(outDetail, { y: 0, yPercent: 0, clearProps: 'transform' });
-            if (outAccentLine) gsap.set(outAccentLine, { scaleY: 1, clearProps: 'transform' });
-            if (outChips && outChips.length) gsap.set(outChips, { y: 0, clearProps: 'transform' });
-            if (outBigNum) gsap.set(outBigNum, { y: 0, clearProps: 'transform' });
+          currentIndexRef.current = targetIndex;
+          setActiveIndex(targetIndex);
+          isTransitioningRef.current = false;
+        };
 
-            lastTransitionTimeRef.current = Date.now();
+        const goTo = (targetIndex) => {
+          if (targetIndex < 0 || targetIndex >= numSteps) return;
+          if (targetIndex === currentIndexRef.current && !activeTimeline) return;
 
-            // Hold step for at least 500ms before advancing to next queued step
-            setTimeout(() => {
+          const fromIndex = currentIndexRef.current;
+          const diff = Math.abs(targetIndex - fromIndex);
+
+          // If jump is larger than one step, snap immediately with zero empty frames
+          if (diff > 1) {
+            snapTo(targetIndex);
+            return;
+          }
+
+          if (targetIndex === fromIndex) return;
+
+          // If a timeline is already running, complete/kill and reset previous cards cleanly
+          if (activeTimeline) {
+            activeTimeline.kill();
+            activeTimeline = null;
+          }
+
+          // Ensure all bystander cards are hidden
+          cards.forEach((c, idx) => {
+            if (idx !== fromIndex && idx !== targetIndex) {
+              setCardHiddenState(c);
+            }
+          });
+
+          // Ensure fromIndex is fully visible and clean as outgoing baseline
+          setCardRestingState(cards[fromIndex]);
+          gsap.set(cards[fromIndex], { zIndex: 1 });
+
+          const direction = targetIndex > fromIndex ? 1 : -1;
+          currentIndexRef.current = targetIndex;
+          setActiveIndex(targetIndex); // Instant update for nav, counter, and rail dot
+          isTransitioningRef.current = true;
+
+          const outgoing = cards[fromIndex];
+          const incoming = cards[targetIndex];
+
+          const inPhaseNum = incoming.querySelector('.step-anim-phase-num');
+          const inTitle = incoming.querySelector('.step-anim-title');
+          const inDesc = incoming.querySelector('.step-anim-desc');
+          const inDetail = incoming.querySelector('.step-anim-detail');
+          const inAccentLine = incoming.querySelector('.step-anim-accent-line');
+          const inChips = incoming.querySelectorAll('.step-anim-chip');
+          const inBigNum = incoming.querySelector('.step-parallax-num');
+
+          // Incoming card starts transparent on top (zIndex: 2), so outgoing underneath remains visible
+          gsap.set(incoming, {
+            autoAlpha: 0,
+            opacity: 0,
+            y: 0,
+            visibility: 'visible',
+            zIndex: 2,
+            pointerEvents: 'auto'
+          });
+
+          if (inBigNum) gsap.set(inBigNum, { y: direction === 1 ? 24 : -24, opacity: 0 });
+          if (inPhaseNum) gsap.set(inPhaseNum, { yPercent: direction === 1 ? 30 : -30, opacity: 0 });
+          if (inTitle) gsap.set(inTitle, { yPercent: direction === 1 ? 25 : -25, opacity: 0 });
+          if (inDesc) gsap.set(inDesc, { y: direction === 1 ? 12 : -12, opacity: 0 });
+          if (inDetail) gsap.set(inDetail, { y: direction === 1 ? 12 : -12, opacity: 0 });
+          if (inAccentLine) gsap.set(inAccentLine, { scaleY: 0, transformOrigin: direction === 1 ? 'top center' : 'bottom center' });
+          if (inChips && inChips.length) gsap.set(inChips, { opacity: 0, y: direction === 1 ? 8 : -8 });
+
+          const tl = gsap.timeline({
+            onComplete: () => {
+              setCardHiddenState(outgoing);
+              setCardRestingState(incoming);
               isTransitioningRef.current = false;
-              if (queueRef.current.length > 0) {
-                const nextTarget = queueRef.current.shift();
-                if (nextTarget !== currentIndexRef.current) {
-                  goTo(nextTarget);
+              activeTimeline = null;
+            }
+          });
+
+          activeTimeline = tl;
+
+          // Cross-fade: incoming card cross-fades directly over outgoing (0.24s total)
+          tl.to(incoming, { autoAlpha: 1, opacity: 1, duration: 0.24, ease: 'power2.out' }, 0);
+          if (inPhaseNum) tl.to(inPhaseNum, { yPercent: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0);
+          if (inTitle) tl.to(inTitle, { yPercent: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0.02);
+          if (inDesc) tl.to(inDesc, { y: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0.03);
+          if (inDetail) tl.to(inDetail, { y: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0.04);
+          if (inAccentLine) tl.to(inAccentLine, { scaleY: 1, duration: 0.24, ease: 'power2.out' }, 0.04);
+          if (inChips && inChips.length) tl.to(inChips, { opacity: 1, y: 0, duration: 0.2, stagger: 0.02, ease: 'power2.out' }, 0.05);
+          if (inBigNum) tl.to(inBigNum, { y: 0, opacity: 0.12, duration: 0.26, ease: 'power3.out' }, 0);
+
+          // Outgoing card fades underneath once incoming is already taking over
+          tl.to(outgoing, { autoAlpha: 0, opacity: 0, duration: 0.22, ease: 'power2.in' }, 0.06);
+        };
+
+        goToRef.current = goTo;
+
+        // Pinned stage ScrollTrigger
+        if (stageRef.current) {
+          const st = ScrollTrigger.create({
+            trigger: stageRef.current,
+            pin: true,
+            anticipatePin: 1,
+            start: 'top top',
+            end: () => '+=' + (numSteps * 100) + '%',
+            onEnter: (self) => {
+              const targetIdx = Math.min(numSteps - 1, Math.max(0, Math.floor(self.progress * numSteps)));
+              snapTo(targetIdx);
+            },
+            onLeave: () => {
+              snapTo(numSteps - 1);
+            },
+            onEnterBack: (self) => {
+              const targetIdx = Math.min(numSteps - 1, Math.max(0, Math.floor(self.progress * numSteps)));
+              snapTo(targetIdx);
+            },
+            onLeaveBack: () => {
+              snapTo(0);
+            },
+            onUpdate: (self) => {
+              // Continuous progress line
+              if (progressLineRef.current) {
+                progressLineRef.current.style.transform = `scaleX(${Math.max(0.04, self.progress)})`;
+              }
+
+              const targetIdx = Math.min(numSteps - 1, Math.max(0, Math.floor(self.progress * numSteps)));
+              goTo(targetIdx);
+            }
+          });
+
+          scrollTriggerInstanceRef.current = st;
+        }
+      } else if (isMobile) {
+        // Mobile sequence: NO pinning. Reveal each card on scroll and toggle .is-active
+        cards.forEach((card, idx) => {
+          const pNum = card.querySelector('.step-anim-phase-num');
+          const al = card.querySelector('.step-anim-accent-line');
+
+          gsap.from(card, {
+            y: 32,
+            opacity: 0,
+            duration: 0.8,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: card,
+              start: 'top 85%',
+              once: true
+            }
+          });
+
+          if (pNum) {
+            gsap.from(pNum, {
+              y: 16,
+              opacity: 0,
+              duration: 0.6,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: card,
+                start: 'top 85%',
+                once: true
+              }
+            });
+          }
+
+          if (al) {
+            gsap.fromTo(al,
+              { scaleY: 0 },
+              {
+                scaleY: 1,
+                duration: 0.8,
+                ease: 'power3.out',
+                scrollTrigger: {
+                  trigger: card,
+                  start: 'top 85%',
+                  once: true
                 }
               }
-            }, 500);
+            );
           }
-        });
 
-        // 1. Outgoing animation (0.35s)
-        // Title and phase number slide up and out in mask
-        if (outPhaseNum) {
-          tl.to(outPhaseNum, {
-            yPercent: direction === 1 ? -120 : 120,
-            duration: 0.35,
-            ease: 'power3.in'
-          }, 0);
-        }
-
-        if (outTitle) {
-          tl.to(outTitle, {
-            yPercent: direction === 1 ? -110 : 110,
-            opacity: 0,
-            duration: 0.35,
-            ease: 'power3.in'
-          }, 0.02);
-        }
-
-        // Desc and detail fade and slide out slightly
-        if (outDesc) {
-          tl.to(outDesc, {
-            y: direction === 1 ? -16 : 16,
-            opacity: 0,
-            duration: 0.32,
-            ease: 'power2.in'
-          }, 0.04);
-        }
-
-        if (outDetail) {
-          tl.to(outDetail, {
-            y: direction === 1 ? -16 : 16,
-            opacity: 0,
-            duration: 0.32,
-            ease: 'power2.in'
-          }, 0.06);
-        }
-
-        if (outAccentLine) {
-          tl.to(outAccentLine, {
-            scaleY: 0,
-            duration: 0.25,
-            ease: 'power2.in'
-          }, 0.06);
-        }
-
-        if (outChips && outChips.length) {
-          tl.to(outChips, {
-            opacity: 0,
-            y: direction === 1 ? -8 : 8,
-            duration: 0.25,
-            stagger: 0.03,
-            ease: 'power2.in'
-          }, 0.06);
-        }
-
-        if (outBigNum) {
-          tl.to(outBigNum, {
-            y: direction === 1 ? -35 : 35,
-            opacity: 0,
-            duration: 0.35,
-            ease: 'power2.in'
-          }, 0);
-        }
-
-        tl.set(outgoing, { autoAlpha: 0, visibility: 'hidden', pointerEvents: 'none' }, 0.38);
-
-        // 2. Incoming animation (starts right when outgoing finishes at 0.4s)
-        const inStartTime = 0.4;
-
-        // Set incoming initial state right before animating it
-        gsap.set(incoming, { autoAlpha: 1, visibility: 'visible', pointerEvents: 'auto', opacity: 1, y: 0 });
-
-        if (inBigNum) gsap.set(inBigNum, { y: direction === 1 ? 50 : -50, yPercent: 0, opacity: 0 });
-        if (inPhaseNum) gsap.set(inPhaseNum, { yPercent: direction === 1 ? 120 : -120, y: 0, opacity: 1 });
-        if (inTitle) gsap.set(inTitle, { yPercent: direction === 1 ? 115 : -115, y: 0, opacity: 0 });
-        if (inDesc) gsap.set(inDesc, { y: direction === 1 ? 20 : -20, yPercent: 0, opacity: 0 });
-        if (inDetail) gsap.set(inDetail, { y: direction === 1 ? 20 : -20, yPercent: 0, opacity: 0 });
-        if (inAccentLine) gsap.set(inAccentLine, { scaleY: 0, transformOrigin: direction === 1 ? 'top center' : 'bottom center' });
-        if (inChips && inChips.length) gsap.set(inChips, { opacity: 0, y: 10, yPercent: 0 });
-
-        // Animate incoming elements
-        if (inBigNum) {
-          tl.to(inBigNum, {
-            y: 0,
-            yPercent: 0,
-            opacity: 0.12,
-            duration: 0.75,
-            ease: 'power3.out'
-          }, inStartTime);
-        }
-
-        // Phase number rolls in from below inside an overflow-hidden mask (0.6s, power4.out)
-        if (inPhaseNum) {
-          tl.to(inPhaseNum, {
-            yPercent: 0,
-            y: 0,
-            duration: 0.6,
-            ease: 'power4.out'
-          }, inStartTime);
-        }
-
-        // Title lines slide up from mask (0.7s)
-        if (inTitle) {
-          tl.to(inTitle, {
-            yPercent: 0,
-            y: 0,
-            opacity: 1,
-            duration: 0.65,
-            ease: 'power3.out'
-          }, inStartTime + 0.05);
-        }
-
-        // Description and detail line fade up 20px (0.6s)
-        if (inDesc) {
-          tl.to(inDesc, {
-            y: 0,
-            yPercent: 0,
-            opacity: 1,
-            duration: 0.6,
-            ease: 'power3.out'
-          }, inStartTime + 0.12);
-        }
-
-        if (inDetail) {
-          tl.to(inDetail, {
-            y: 0,
-            yPercent: 0,
-            opacity: 1,
-            duration: 0.6,
-            ease: 'power3.out'
-          }, inStartTime + 0.18);
-        }
-
-        // Vertical accent line draws down left of detail text
-        if (inAccentLine) {
-          tl.to(inAccentLine, {
-            scaleY: 1,
-            duration: 0.5,
-            ease: 'power2.out'
-          }, inStartTime + 0.22);
-        }
-
-        // Small label chips fade in last
-        if (inChips && inChips.length) {
-          tl.to(inChips, {
-            opacity: 1,
-            y: 0,
-            yPercent: 0,
-            duration: 0.45,
-            stagger: 0.06,
-            ease: 'power2.out'
-          }, inStartTime + 0.3);
-        }
-      };
-
-      goToRef.current = goTo;
-
-      // 2) EVERY STEP MUST BE SEEN: Minimum dwell of 500ms per step & single-step queueing
-      const requestStep = (target) => {
-        if (target === currentIndexRef.current && queueRef.current.length === 0) return;
-
-        const now = Date.now();
-        const timeSinceLast = now - lastTransitionTimeRef.current;
-
-        if (isTransitioningRef.current || timeSinceLast < 500) {
-          const currentDest = queueRef.current.length > 0 ? queueRef.current[queueRef.current.length - 1] : currentIndexRef.current;
-          if (target === currentDest) return;
-
-          const stepDir = target > currentDest ? 1 : -1;
-          const nextInQueue = currentDest + stepDir;
-
-          // If direction changed, reset queue towards new target
-          if (queueRef.current.length > 0) {
-            const existingDir = queueRef.current[0] > currentIndexRef.current ? 1 : -1;
-            if (existingDir !== stepDir) {
-              queueRef.current = [];
+          // Cross 60% of viewport: toggle .is-active and update sticky counter / progress
+          ScrollTrigger.create({
+            trigger: card,
+            start: 'top 60%',
+            end: 'bottom 60%',
+            onToggle: (self) => {
+              if (self.isActive) {
+                card.classList.add('is-active');
+                setActiveIndex(idx);
+                if (progressLineRef.current) {
+                  gsap.to(progressLineRef.current, {
+                    scaleX: (idx + 1) / numSteps,
+                    duration: 0.3,
+                    ease: 'power2.out'
+                  });
+                }
+              } else {
+                card.classList.remove('is-active');
+              }
             }
-          }
-
-          if (nextInQueue >= 0 && nextInQueue < numSteps && !queueRef.current.includes(nextInQueue)) {
-            queueRef.current.push(nextInQueue);
-          }
-          return;
-        }
-
-        // Advance 1 step towards target to ensure intermediate steps are seen
-        const stepDir = target > currentIndexRef.current ? 1 : -1;
-        const nextStep = currentIndexRef.current + stepDir;
-        goTo(nextStep);
-      };
-
-      // 1) ONE SCROLLTRIGGER, NO SNAP
-      if (isDesktop && stageRef.current) {
-        const st = ScrollTrigger.create({
-          trigger: stageRef.current,
-          pin: true,
-          anticipatePin: 1,
-          start: 'top top',
-          end: () => '+=' + (numSteps * 100) + '%',
-          onUpdate: (self) => {
-            // Continuous progress line
-            if (progressLineRef.current) {
-              progressLineRef.current.style.transform = `scaleX(${Math.max(0.04, self.progress)})`;
-            }
-
-            const targetIdx = Math.min(numSteps - 1, Math.floor(self.progress * numSteps));
-            requestStep(targetIdx);
-          }
+          });
         });
-
-        scrollTriggerInstanceRef.current = st;
       }
 
       // "How to join": SVG line draws through the three steps as you scroll
@@ -437,25 +415,27 @@ export const Academy = () => {
       {/* 4) PINNED STAGE THAT FITS THE VIEWPORT (100svh, padding-top: header, align-content: center) */}
       <div className="academy-stage-wrapper" ref={stageRef}>
         <div className="container academy-stage-inner">
-          {/* Header row inside stage: label & single-source counter */}
-          <div className="academy-stage-header-row">
-            <span className="section-label" style={{ color: 'var(--color-dark-muted)', marginBottom: 0 }}>
-              What you can learn
-            </span>
-            <span className="academy-step-counter" aria-live="polite">
-              0{activeIndex + 1} / 0{data.modules.length}
-            </span>
-          </div>
+          {/* Header row inside stage: sticky on mobile with counter and progress bar */}
+          <div className="academy-mobile-sticky-header">
+            <div className="academy-stage-header-row">
+              <span className="section-label" style={{ color: 'var(--color-dark-muted)', marginBottom: 0 }}>
+                What you can learn
+              </span>
+              <span className="academy-step-counter" aria-live="polite">
+                0{activeIndex + 1} / 0{data.modules.length}
+              </span>
+            </div>
 
-          {/* Continuous progress track line */}
-          <div className="academy-progress-bar-wrap" aria-hidden="true">
-            <div className="academy-progress-bar-fill" ref={progressLineRef}></div>
+            {/* Continuous progress track line */}
+            <div className="academy-progress-bar-wrap" aria-hidden="true">
+              <div className="academy-progress-bar-fill" ref={progressLineRef}></div>
+            </div>
           </div>
 
           {/* Main 2-column stage layout */}
           <div className="academy-stage-grid">
             {/* Left list: 4 items with highlight & clickable to scroll */}
-            <div className="academy-stepper-nav" role="tablist" aria-label="Course modules">
+            <nav className="academy-stepper-nav" aria-label="Course modules">
               <div className="academy-rail-track" aria-hidden="true">
                 <div
                   className="academy-rail-dot"
@@ -469,10 +449,8 @@ export const Academy = () => {
                 <button
                   key={m.num}
                   type="button"
-                  role="tab"
-                  id={`academy-tab-${idx}`}
-                  aria-selected={activeIndex === idx}
-                  aria-controls={`academy-panel-${idx}`}
+                  id={`academy-step-btn-${idx}`}
+                  aria-current={activeIndex === idx ? 'step' : undefined}
                   className={`academy-stepper-btn ${activeIndex === idx ? 'active' : ''}`}
                   onClick={() => handleStepClick(idx)}
                 >
@@ -482,7 +460,7 @@ export const Academy = () => {
                   </span>
                 </button>
               ))}
-            </div>
+            </nav>
 
             {/* Right: Pinned card stage with 4 steps stacked in the same grid cell */}
             <div className="academy-card-stage">
@@ -490,8 +468,6 @@ export const Academy = () => {
                 <div
                   key={m.num}
                   id={`academy-panel-${idx}`}
-                  role="tabpanel"
-                  aria-labelledby={`academy-tab-${idx}`}
                   className="academy-step-card"
                 >
                   {/* Faint outlined background numeral for parallax */}
@@ -558,7 +534,7 @@ export const Academy = () => {
                 <path
                   ref={stepsSvgRef}
                   d="M2 0 L2 200"
-                  stroke="var(--color-accent)"
+                  stroke="var(--color-dark-accent, #C88358)"
                   strokeWidth="3"
                   strokeDasharray="300"
                   strokeDashoffset="300"
@@ -580,9 +556,37 @@ export const Academy = () => {
         {/* Closing Action Footer */}
         <div className="academy-action-footer">
           <div>
+            {siteData.academyDetails && (siteData.academyDetails.confirmed ?? true) && (
+              <div className="academy-details-strip">
+                {siteData.academyDetails.duration && (
+                  <div className="academy-detail-item">
+                    <span className="academy-detail-label">Duration</span>
+                    <span className="academy-detail-val">{siteData.academyDetails.duration}</span>
+                  </div>
+                )}
+                {(siteData.academyDetails.feeRange || siteData.academyDetails.fee) && (
+                  <div className="academy-detail-item">
+                    <span className="academy-detail-label">Fee</span>
+                    <span className="academy-detail-val">{siteData.academyDetails.feeRange || siteData.academyDetails.fee}</span>
+                  </div>
+                )}
+                {siteData.academyDetails.nextBatch && (
+                  <div className="academy-detail-item">
+                    <span className="academy-detail-label">Next Batch</span>
+                    <span className="academy-detail-val">{siteData.academyDetails.nextBatch}</span>
+                  </div>
+                )}
+                {siteData.academyDetails.certificate && (
+                  <div className="academy-detail-item">
+                    <span className="academy-detail-label">Certificate</span>
+                    <span className="academy-detail-val">{siteData.academyDetails.certificate}</span>
+                  </div>
+                )}
+              </div>
+            )}
             <p className="academy-closing-line">{data.closingLine}</p>
             <span style={{ fontSize: '0.8125rem', color: 'var(--color-dark-muted)' }}>
-              Direct message to academy coordinator on Necklace Road, Ranpise Nagar
+              Direct message to our academy coordinator
             </span>
           </div>
 
@@ -591,9 +595,9 @@ export const Academy = () => {
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-dark"
-            aria-label="Enquire on WhatsApp about the academy"
+            aria-label="Ask about academy courses and batches on WhatsApp"
           >
-            <span>Enquire on WhatsApp</span>
+            <span>Ask about batches</span>
             <span className="btn-arrow">→</span>
           </a>
         </div>
@@ -665,7 +669,7 @@ export const Academy = () => {
         .academy-step-counter {
           font-family: var(--font-serif);
           font-size: 1.15rem;
-          color: var(--color-accent);
+          color: var(--color-dark-accent, #C88358);
           letter-spacing: 0.04em;
         }
 
@@ -681,7 +685,7 @@ export const Academy = () => {
         .academy-progress-bar-fill {
           height: 100%;
           width: 100%;
-          background: var(--color-accent);
+          background: var(--color-dark-accent, #C88358);
           transform-origin: left center;
           transform: scaleX(0.04);
         }
@@ -748,8 +752,8 @@ export const Academy = () => {
         }
 
         .academy-stepper-btn.active .stepper-dot-indicator {
-          border-color: var(--color-accent);
-          background: var(--color-accent);
+          border-color: var(--color-dark-accent, #C88358);
+          background: var(--color-dark-accent, #C88358);
           transform: translateY(-50%) scale(1.15);
         }
 
@@ -763,7 +767,7 @@ export const Academy = () => {
 
         .stepper-label strong {
           font-family: var(--font-serif);
-          color: var(--color-accent);
+          color: var(--color-dark-accent, #C88358);
         }
 
         /* Right Step Cards Stack */
@@ -829,7 +833,7 @@ export const Academy = () => {
           font-family: var(--font-serif);
           font-size: clamp(2.5rem, 4.5vw, 3.5rem);
           line-height: 1;
-          color: var(--color-accent);
+          color: var(--color-dark-accent, #C88358);
           font-weight: 300;
         }
 
@@ -868,7 +872,7 @@ export const Academy = () => {
           top: 2px;
           bottom: 2px;
           width: 2px;
-          background: var(--color-accent);
+          background: var(--color-dark-accent, #C88358);
           transform-origin: top center;
         }
 
@@ -946,7 +950,7 @@ export const Academy = () => {
         .academy-step-num {
           font-family: var(--font-serif);
           font-size: 1.1rem;
-          color: var(--color-accent);
+          color: var(--color-dark-accent, #C88358);
         }
 
         .academy-step-title {
@@ -972,6 +976,35 @@ export const Academy = () => {
           margin-bottom: 0.35rem;
         }
 
+        .academy-details-strip {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1.5rem 2.5rem;
+          margin-bottom: 1.25rem;
+          padding-bottom: 1.25rem;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .academy-detail-item {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .academy-detail-label {
+          font-size: var(--size-micro);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--color-dark-accent, #C88358);
+          font-weight: 600;
+        }
+
+        .academy-detail-val {
+          font-family: var(--font-body);
+          font-size: 0.95rem;
+          color: #FAF8F5;
+        }
+
         /* 8) FALLBACKS: Mobile & prefers-reduced-motion (no pinning, stacked list) */
         @media (max-width: 860px) {
           .academy-stage-wrapper {
@@ -991,8 +1024,24 @@ export const Academy = () => {
           .academy-stepper-nav {
             display: none;
           }
+          .academy-mobile-sticky-header {
+            position: sticky;
+            top: var(--header-height, 72px);
+            transition: top 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 25;
+            background: #141211;
+            padding: 0.75rem 0 0.25rem 0;
+            margin-bottom: 1rem;
+          }
+          html[data-header='hidden'] .academy-mobile-sticky-header {
+            top: 0;
+          }
           .academy-progress-bar-wrap {
-            display: none;
+            display: block !important;
+            margin-bottom: 0.5rem;
+          }
+          .academy-stage-header-row {
+            margin-bottom: 0.5rem;
           }
           .academy-card-stage {
             display: flex;
@@ -1005,21 +1054,15 @@ export const Academy = () => {
           .academy-step-card {
             position: relative;
             inset: auto;
-            transform: none !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            pointer-events: auto !important;
-            display: flex !important;
+            display: flex;
             background: #1E1B19;
             border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 1.75rem 1.5rem;
+            opacity: 0.55;
+            transition: opacity 0.3s ease;
           }
-          .step-anim-text, .step-anim-desc, .step-anim-detail, .step-anim-title, .step-anim-phase-num, .step-anim-chip {
-            opacity: 1 !important;
-            transform: none !important;
-          }
-          .step-anim-accent-line {
-            transform: scaleY(1) !important;
+          .academy-step-card.is-active {
+            opacity: 1;
           }
           .academy-bottom-grid {
             grid-template-columns: 1fr;

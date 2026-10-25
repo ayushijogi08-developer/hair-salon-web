@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { siteData } from '../data/site';
@@ -8,6 +8,11 @@ export const ServicesOverview = () => {
   const [activeIdx, setActiveIdx] = useState(0);
   const items = siteData.servicesOverview;
   const sectionRef = useRef(null);
+  const slideRefs = useRef([]);
+
+  const handleRowActivate = (idx) => {
+    setActiveIdx(idx);
+  };
 
   // 4 curated imagery states corresponding to each discipline
   const serviceImages = [
@@ -18,17 +23,17 @@ export const ServicesOverview = () => {
   ];
 
   useLayoutEffect(() => {
-    const mm = gsap.matchMedia(sectionRef);
+    const mm = gsap.matchMedia(sectionRef.current);
 
     mm.add({
       isDesktop: '(min-width: 901px)',
       isMobile: '(max-width: 900px)',
       reduceMotion: '(prefers-reduced-motion: reduce)'
     }, (context) => {
-      const { reduceMotion, isDesktop } = context.conditions;
+      const { reduceMotion, isDesktop, isMobile } = context.conditions;
 
       if (reduceMotion) {
-        gsap.set('.service-overview-row', { opacity: 1 });
+        gsap.set('.service-overview-row, .service-row-thumb', { opacity: 1, clipPath: 'inset(0% 0% 0% 0%)' });
         return;
       }
 
@@ -41,9 +46,41 @@ export const ServicesOverview = () => {
         ease: 'power3.out',
         scrollTrigger: {
           trigger: '.services-interactive-list',
-          start: 'top 85%'
+          start: 'top 85%',
+          once: true
         }
       });
+
+      // Mobile: reveal thumbnails and toggle active-row as row crosses 55%
+      if (isMobile) {
+        const rows = gsap.utils.toArray('.service-overview-row');
+        rows.forEach((row) => {
+          const thumb = row.querySelector('.service-row-thumb');
+          if (thumb) {
+            gsap.fromTo(thumb,
+              { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0.4 },
+              {
+                clipPath: 'inset(0% 0% 0% 0%)',
+                opacity: 1,
+                duration: 0.8,
+                ease: 'power3.out',
+                scrollTrigger: {
+                  trigger: row,
+                  start: 'top 85%',
+                  once: true
+                }
+              }
+            );
+          }
+
+          ScrollTrigger.create({
+            trigger: row,
+            start: 'top 55%',
+            end: 'bottom 55%',
+            toggleClass: { targets: row, className: 'active-row' }
+          });
+        });
+      }
 
       // Desktop pinned split layout: pin right image pane as list scrolls
       if (isDesktop) {
@@ -60,17 +97,37 @@ export const ServicesOverview = () => {
     return () => mm.revert();
   }, []);
 
-  // Clip-path transition when row becomes active
-  const handleRowActivate = (idx) => {
-    if (idx === activeIdx) return;
-    setActiveIdx(idx);
+  // Animate the active slide after React has rendered it
+  useEffect(() => {
+    const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const targetSlide = slideRefs.current[activeIdx];
+    if (!targetSlide) return;
 
-    const imgWrap = document.querySelector(`.service-active-img-${idx}`);
-    if (imgWrap) {
-      gsap.fromTo(imgWrap,
-        { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0.4 },
-        { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, duration: 0.7, ease: 'power3.out' }
-      );
+    if (isReduced) {
+      gsap.set(targetSlide, { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 });
+      return;
+    }
+
+    const anim = gsap.fromTo(targetSlide,
+      { clipPath: 'inset(100% 0% 0% 0%)', opacity: 0.4 },
+      { clipPath: 'inset(0% 0% 0% 0%)', opacity: 1, duration: 0.7, ease: 'power3.out' }
+    );
+
+    return () => {
+      anim.kill();
+    };
+  }, [activeIdx]);
+
+  // Smooth scroll handler for each visual index row
+  const handleScrollTo = (e, targetId) => {
+    e.preventDefault();
+    const el = document.getElementById(targetId);
+    if (el) {
+      if (window.lenis) {
+        window.lenis.scrollTo(el, { offset: -40, duration: 1.0 });
+      } else {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -80,9 +137,9 @@ export const ServicesOverview = () => {
         <SectionEyebrowRow label="Salon Offerings" num="01" />
 
         <div className="services-split-grid">
-          {/* Left: Numbered list with thin dividers */}
+          {/* Left: Visual Index with number, title, one line, small image, arrow */}
           <div className="services-list-pane">
-            <h2 id="services-overview-title" className="section-reveal-h2" style={{ marginBottom: '1.5rem' }}>
+            <h2 id="services-overview-title" className="section-reveal-h2" style={{ marginBottom: '1.25rem' }}>
               Salon services for cuts, colour, and scalp care.
             </h2>
 
@@ -90,23 +147,39 @@ export const ServicesOverview = () => {
               Every service begins with honest consultation regarding face shape, base tone, and hair condition.
             </WordFillParagraph>
 
-            <div className="services-interactive-list">
+            <div className="services-interactive-list" role="list">
               {items.map((item, idx) => (
                 <a
                   key={item.num}
                   href={`#${item.targetId}`}
                   className={`service-overview-row ${activeIdx === idx ? 'active-row' : ''}`}
+                  onClick={(e) => handleScrollTo(e, item.targetId)}
                   onMouseEnter={() => handleRowActivate(idx)}
                   onFocus={() => handleRowActivate(idx)}
+                  aria-label={`Scroll to ${item.title}`}
                 >
-                  <div className="service-row-left">
+                  <div className="service-row-leading">
                     <span className="service-row-num">{item.num}</span>
+                    {serviceImages[idx]?.src && (
+                      <div className="service-row-thumb" aria-hidden="true">
+                        <img
+                          src={serviceImages[idx].src}
+                          alt=""
+                          width="160"
+                          height="200"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="service-row-content">
                     <h3 className="service-row-title">{item.title}</h3>
-                  </div>
-                  <div className="service-row-right">
                     <p className="service-row-summary">{item.summary}</p>
-                    <span className="service-row-arrow">→</span>
                   </div>
+
+                  <span className="service-row-arrow" aria-hidden="true">→</span>
                 </a>
               ))}
             </div>
@@ -118,14 +191,18 @@ export const ServicesOverview = () => {
               {serviceImages.map((img, idx) => (
                 <div
                   key={idx}
+                  ref={(el) => { slideRefs.current[idx] = el; }}
                   className={`service-image-slide service-active-img-${idx} ${activeIdx === idx ? 'current' : ''}`}
                   style={{ display: activeIdx === idx ? 'block' : 'none' }}
                 >
                   <img
                     src={img.src}
                     alt={img.alt}
+                    width="600"
+                    height="750"
                     className="services-sticky-img"
                     loading="lazy"
+                    decoding="async"
                   />
                   <div className="services-image-caption">
                     <span>{items[idx]?.title}</span>
@@ -151,61 +228,92 @@ export const ServicesOverview = () => {
 
         .service-overview-row {
           display: grid;
-          grid-template-columns: 1.1fr 1fr;
-          align-items: baseline;
-          padding: clamp(1.75rem, 3.5vw, 2.5rem) 0;
+          grid-template-columns: auto 1fr auto;
+          gap: clamp(1rem, 2vw, 1.75rem);
+          align-items: center;
+          padding: clamp(1.25rem, 2.5vw, 1.85rem) 0;
           border-bottom: 1px solid var(--color-border);
-          transition: transform 0.3s var(--ease-editorial), color 0.25s ease, border-color 0.25s ease;
+          transition: transform 0.25s var(--ease-editorial), border-color 0.25s ease;
           text-decoration: none;
+          color: inherit;
         }
 
-        /* Active row turns clay and shifts 12px right with an arrow */
         .service-overview-row.active-row {
-          transform: translateX(12px);
+          transform: translateX(8px);
           border-bottom-color: var(--color-accent);
         }
 
-        .service-row-left {
+        .service-row-leading {
           display: flex;
-          align-items: baseline;
-          gap: 1.75rem;
+          align-items: center;
+          gap: 1.25rem;
         }
 
         .service-row-num {
           font-family: var(--font-serif);
-          font-size: 1.15rem;
+          font-size: 1.2rem;
           color: var(--color-accent);
+          flex-shrink: 0;
+          min-width: 1.75rem;
+        }
+
+        /* Small image from existing assets for visual index */
+        .service-row-thumb {
+          width: clamp(56px, 6vw, 68px);
+          height: clamp(68px, 7.5vw, 84px);
+          overflow: hidden;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
           flex-shrink: 0;
         }
 
+        .service-row-thumb img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: 50% 20%;
+          display: block;
+          transition: transform 0.35s ease;
+        }
+
+        .service-overview-row:hover .service-row-thumb img,
+        .service-overview-row.active-row .service-row-thumb img {
+          transform: scale(1.06);
+        }
+
+        .service-row-content {
+          display: flex;
+          flex-direction: column;
+          gap: 0.35rem;
+          min-width: 0;
+        }
+
         .service-row-title {
-          font-size: clamp(1.35rem, 2vw, 1.75rem);
+          font-size: clamp(1.2rem, 1.8vw, 1.55rem);
           font-weight: 400;
           color: var(--color-text);
           transition: color 0.25s ease;
+          line-height: 1.25;
+          margin: 0;
         }
 
         .service-overview-row.active-row .service-row-title {
           color: var(--color-accent);
         }
 
-        .service-row-right {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 1.5rem;
-        }
-
         .service-row-summary {
           font-size: 0.875rem;
           color: var(--color-muted);
-          line-height: 1.5;
+          line-height: 1.45;
+          margin: 0;
         }
 
         .service-row-arrow {
-          font-size: 1.25rem;
+          font-size: 1.35rem;
           color: var(--color-accent);
           transition: transform 0.3s var(--ease-editorial);
+          flex-shrink: 0;
+          padding-right: 0.5rem;
         }
 
         .service-overview-row.active-row .service-row-arrow {
@@ -238,6 +346,7 @@ export const ServicesOverview = () => {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          object-position: 50% 20%;
           display: block;
         }
 
@@ -245,7 +354,7 @@ export const ServicesOverview = () => {
           position: absolute;
           bottom: 1rem;
           left: 1rem;
-          background: rgba(20, 18, 17, 0.7);
+          background: rgba(20, 18, 17, 0.75);
           color: #FAF8F5;
           padding: 0.35rem 0.75rem;
           font-size: 0.75rem;
@@ -262,14 +371,25 @@ export const ServicesOverview = () => {
             display: none;
           }
           .service-overview-row {
-            grid-template-columns: 1fr;
-            gap: 0.5rem;
+            grid-template-columns: auto 1fr auto;
+            gap: 1rem;
           }
-          .service-overview-row.active-row {
-            transform: translateX(6px);
+          .service-row-leading {
+            gap: 0.85rem;
           }
-          .service-row-right {
-            padding-left: 2.75rem;
+        }
+
+        @media (max-width: 480px) {
+          .service-row-leading {
+            gap: 0.65rem;
+          }
+          .service-row-num {
+            min-width: 1.4rem;
+            font-size: 1.05rem;
+          }
+          .service-row-thumb {
+            width: 50px;
+            height: 62px;
           }
         }
       `}</style>

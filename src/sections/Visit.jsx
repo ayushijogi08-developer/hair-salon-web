@@ -1,17 +1,20 @@
 import React, { useState, useLayoutEffect, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { siteData } from '../data/site';
+import { getBusinessStatus } from '../lib/hours';
 import { WordFillParagraph } from '../components/MotionText';
+import { canHover } from '../lib/motion';
 
 export const Visit = () => {
   const [mapActive, setMapActive] = useState(false);
+  const businessStatus = getBusinessStatus();
   const visitRef = useRef(null);
   const magneticCtaRef = useRef(null);
 
   // Desktop magnetic button effect (6 to 8px pull)
   useEffect(() => {
     const btn = magneticCtaRef.current;
-    if (!btn || window.innerWidth <= 860) return;
+    if (!btn || !canHover()) return;
 
     const handleMouseMove = (e) => {
       const rect = btn.getBoundingClientRect();
@@ -43,7 +46,7 @@ export const Visit = () => {
   }, []);
 
   useLayoutEffect(() => {
-    const mm = gsap.matchMedia(visitRef);
+    const mm = gsap.matchMedia(visitRef.current);
 
     mm.add({
       isDesktop: '(min-width: 861px)',
@@ -66,7 +69,8 @@ export const Visit = () => {
         ease: 'power3.out',
         scrollTrigger: {
           trigger: '.visit-editorial-grid',
-          start: 'top 85%'
+          start: 'top 85%',
+          once: true
         }
       });
 
@@ -77,7 +81,8 @@ export const Visit = () => {
         ease: 'power3.out',
         scrollTrigger: {
           trigger: '.visit-closing-banner',
-          start: 'top 85%'
+          start: 'top 85%',
+          once: true
         }
       });
     });
@@ -105,6 +110,12 @@ export const Visit = () => {
           <div className="visit-pane">
             <span className="editorial-label">Hours</span>
             <div className="visit-pane-content">
+              <div style={{ marginBottom: '0.65rem' }}>
+                <span className="status-badge" data-open={businessStatus.isOpen}>
+                  <span className="status-dot"></span>
+                  {businessStatus.badgeText}
+                </span>
+              </div>
               <span className="visit-highlight">{siteData.hours.days}</span>
               <span className="visit-hours">{siteData.hours.time}</span>
               <p className="visit-note">Open daily, including weekends.</p>
@@ -145,6 +156,7 @@ export const Visit = () => {
                 href={siteData.links.googleMaps}
                 target="_blank"
                 rel="noopener noreferrer"
+                className="visit-maps-link"
                 style={{ fontSize: '0.8125rem', color: 'var(--color-muted)', textAlign: 'center', textDecoration: 'underline' }}
               >
                 View on Google Maps
@@ -168,7 +180,7 @@ export const Visit = () => {
                 className="btn btn-primary"
                 style={{ width: '100%', justifyContent: 'center' }}
               >
-                Enquire on WhatsApp
+                Message on WhatsApp
               </a>
               <a
                 href={siteData.links.instagram}
@@ -201,15 +213,15 @@ export const Visit = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary visit-magnetic-btn"
-              aria-label="Enquire on WhatsApp"
+              aria-label="Book an appointment on WhatsApp"
             >
-              <span>Enquire on WhatsApp</span>
+              <span>Book an appointment</span>
               <span className="btn-arrow">→</span>
             </a>
           </div>
         </div>
 
-        {/* Restyled Embedded Map with Grayscale Filter & Click-to-Activate Layer */}
+        {/* Restyled Embedded Map with Grayscale Filter, Fallback Layer & Click-to-Activate */}
         <div className="visit-map-container">
           <div
             className={`map-activation-layer ${mapActive ? 'active' : ''}`}
@@ -218,19 +230,50 @@ export const Visit = () => {
             role="region"
             aria-label="Interactive map"
           >
+            {/* Fallback layer behind iframe if iframe fails to load */}
+            <div className="map-fallback-layer" aria-hidden="true">
+              <span className="map-fallback-title">Hair City Salon & Academy</span>
+              <p className="map-fallback-address">{siteData.address.line1}, {siteData.address.line2}, {siteData.address.city}</p>
+              <a
+                href={siteData.links.googleMaps}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary"
+                style={{ marginTop: '0.75rem' }}
+              >
+                View on Google Maps →
+              </a>
+            </div>
+
             {!mapActive && (
               <div className="map-activate-prompt">
-                <span className="map-prompt-badge">Click map to interact</span>
+                <span className="map-prompt-badge map-prompt-hover">Click map to interact</span>
+                <span className="map-prompt-badge map-prompt-touch">Tap to explore map</span>
               </div>
             )}
+            {mapActive && (
+              <button
+                type="button"
+                className="map-done-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMapActive(false);
+                }}
+                aria-label="Done exploring map"
+              >
+                Done
+              </button>
+            )}
             <iframe
-              title="Hair City Salon & Academy Location"
+              title="Google Maps showing Hair City Salon & Academy location on Necklace Road, Ranpise Nagar, Akola"
               src={`https://maps.google.com/maps?q=${siteData.coordinates.lat},${siteData.coordinates.lng}&hl=en&z=16&output=embed`}
               width="100%"
               height="360"
               style={{
                 border: 0,
                 display: 'block',
+                position: 'relative',
+                zIndex: 2,
                 filter: 'grayscale(0.85) contrast(1.1) brightness(0.98)',
                 pointerEvents: mapActive ? 'auto' : 'none'
               }}
@@ -238,6 +281,22 @@ export const Visit = () => {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             ></iframe>
+          </div>
+
+          {/* Visible fallback link bar directly below the map */}
+          <div className="map-footer-bar">
+            <span className="map-footer-address">
+              {siteData.address.line1}, {siteData.address.line2}, {siteData.address.city}
+            </span>
+            <a
+              href={siteData.links.googleMaps}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="map-fallback-link"
+              aria-label="View Hair City Salon & Academy on Google Maps"
+            >
+              View on Google Maps ↗
+            </a>
           </div>
         </div>
       </div>
@@ -357,6 +416,117 @@ export const Visit = () => {
           padding: 0.6rem 1.25rem;
           letter-spacing: 0.04em;
           box-shadow: 0 4px 12px rgba(20, 18, 17, 0.08);
+        }
+
+        .map-prompt-hover {
+          display: inline-block;
+        }
+
+        .map-prompt-touch {
+          display: none;
+        }
+
+        @media (hover: none) {
+          .map-prompt-hover {
+            display: none;
+          }
+          .map-prompt-touch {
+            display: inline-block;
+          }
+        }
+
+        .map-done-btn {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          z-index: 10;
+          background: var(--color-bg);
+          color: var(--color-text);
+          border: 1px solid var(--color-border);
+          padding: 0.5rem 1.15rem;
+          font-family: var(--font-sans);
+          font-size: var(--size-small);
+          font-weight: 600;
+          cursor: pointer;
+          border-radius: 2px;
+          box-shadow: 0 4px 12px rgba(20, 18, 17, 0.15);
+          transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+        }
+        .map-done-btn:hover {
+          background: var(--color-accent);
+          color: #FFFFFF;
+          border-color: var(--color-accent);
+        }
+
+        .map-fallback-layer {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: var(--color-surface);
+          padding: 2rem;
+          text-align: center;
+          z-index: 1;
+        }
+
+        .map-fallback-title {
+          font-family: var(--font-serif);
+          font-size: 1.25rem;
+          color: var(--color-text);
+          margin-bottom: 0.25rem;
+        }
+
+        .map-fallback-address {
+          font-size: 0.875rem;
+          color: var(--color-muted);
+        }
+
+        .map-footer-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.75rem 1.25rem;
+          background: var(--color-surface);
+          border-top: 1px solid var(--color-border);
+          font-size: 0.8125rem;
+          color: var(--color-muted);
+          gap: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .map-footer-address {
+          color: var(--color-muted);
+        }
+
+        .map-fallback-link {
+          font-weight: 500;
+          color: var(--color-accent);
+          text-decoration: underline;
+          text-underline-offset: 3px;
+          transition: color var(--transition-fast);
+        }
+
+        .map-fallback-link:hover {
+          color: var(--color-accent-hover);
+        }
+
+        @media (pointer: coarse) {
+          .visit-maps-link,
+          .map-fallback-link {
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 0.5rem 1rem;
+          }
+          .map-done-btn {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
         }
       `}</style>
     </section>

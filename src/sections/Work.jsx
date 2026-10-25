@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { Flip } from 'gsap/Flip';
-import { siteData } from '../data/site';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { siteData, whatsappFor } from '../data/site';
 import { WordFillParagraph, SectionEyebrowRow } from '../components/MotionText';
+import { canHover } from '../lib/motion';
 
 export const Work = () => {
   const [activePhoto, setActivePhoto] = useState(null);
@@ -20,6 +22,7 @@ export const Work = () => {
   const hasMovedRef = useRef(false);
   const startXRef = useRef(0);
   const scrollStartLeftRef = useRef(0);
+  const pointerStartRef = useRef({ x: 0, y: 0, time: 0 });
 
   // Category filtering & scroller state
   const allPhotos = siteData.images.work;
@@ -111,7 +114,7 @@ export const Work = () => {
     if (!el) return;
 
     const onMouseDown = (e) => {
-      if (window.innerWidth <= 860) return;
+      if (!canHover()) return;
       isDraggingRef.current = true;
       hasMovedRef.current = false;
       startXRef.current = e.pageX - el.offsetLeft;
@@ -152,7 +155,7 @@ export const Work = () => {
     if (!el) return;
 
     const onWheel = (e) => {
-      if (window.innerWidth <= 860) return;
+      if (!canHover()) return;
       const delta = e.deltaY;
       if (Math.abs(delta) < 4) return;
 
@@ -178,7 +181,7 @@ export const Work = () => {
   useEffect(() => {
     const galleryEl = galleryRef.current;
     const cursor = cursorRef.current;
-    if (!galleryEl || !cursor || window.innerWidth <= 860) return;
+    if (!galleryEl || !cursor || !canHover()) return;
 
     const handleMouseMove = (e) => {
       const rect = galleryEl.getBoundingClientRect();
@@ -214,7 +217,7 @@ export const Work = () => {
 
   // Reveal each image with a clip-path as it scrolls into view
   useLayoutEffect(() => {
-    const mm = gsap.matchMedia(galleryRef);
+    const mm = gsap.matchMedia(galleryRef.current);
 
     mm.add({
       isDesktop: '(min-width: 861px)',
@@ -238,7 +241,8 @@ export const Work = () => {
           ease: 'power3.out',
           scrollTrigger: {
             trigger: trackRef.current,
-            start: 'top 85%'
+            start: 'top 85%',
+            once: true
           },
           onComplete: () => {
             const cards = document.querySelectorAll('.work-photo-img, .work-cursor-badge');
@@ -246,6 +250,26 @@ export const Work = () => {
           }
         }
       );
+
+      // One-time mobile swipe hint (nudge track -24px and back)
+      if (!reduceMotion && trackRef.current) {
+        ScrollTrigger.create({
+          trigger: trackRef.current,
+          start: 'top 85%',
+          once: true,
+          onEnter: () => {
+            if (canHover()) return;
+            gsap.to(trackRef.current, {
+              x: -24,
+              duration: 0.35,
+              ease: 'power2.out',
+              yoyo: true,
+              repeat: 1,
+              clearProps: 'x'
+            });
+          }
+        });
+      }
     });
 
     return () => mm.revert();
@@ -308,17 +332,16 @@ export const Work = () => {
               Salon work
             </h2>
             <WordFillParagraph style={{ fontSize: 'clamp(1.05rem, 1.4vw, 1.25rem)', lineHeight: '1.5' }}>
-              Real haircut and styling craft from our studio on Necklace Road. Every photo is real work completed in our salon.
+              Real haircut, colour, and styling craft from our chairs and studio.
             </WordFillParagraph>
           </div>
 
           {/* Action Row: Category Filter Pills + Controls */}
           <div className="work-header-actions">
-            <div className="work-filter-pills" role="tablist" aria-label="Filter salon work by category">
+            <div className="work-filter-pills" role="group" aria-label="Filter salon work by category">
               <button
                 type="button"
-                role="tab"
-                aria-selected={filterCategory === 'all'}
+                aria-pressed={filterCategory === 'all'}
                 className={`work-filter-pill ${filterCategory === 'all' ? 'active' : ''}`}
                 onClick={() => handleFilterChange('all')}
               >
@@ -326,8 +349,7 @@ export const Work = () => {
               </button>
               <button
                 type="button"
-                role="tab"
-                aria-selected={filterCategory === 'boys'}
+                aria-pressed={filterCategory === 'boys'}
                 className={`work-filter-pill ${filterCategory === 'boys' ? 'active' : ''}`}
                 onClick={() => handleFilterChange('boys')}
               >
@@ -335,8 +357,7 @@ export const Work = () => {
               </button>
               <button
                 type="button"
-                role="tab"
-                aria-selected={filterCategory === 'girls'}
+                aria-pressed={filterCategory === 'girls'}
                 className={`work-filter-pill ${filterCategory === 'girls' ? 'active' : ''}`}
                 onClick={() => handleFilterChange('girls')}
               >
@@ -416,6 +437,7 @@ export const Work = () => {
                   width="800"
                   height="1000"
                   loading="lazy"
+                  decoding="async"
                   className="work-photo-img"
                   draggable={false}
                 />
@@ -458,7 +480,38 @@ export const Work = () => {
           aria-modal="true"
           aria-label={activePhoto.title || activePhoto.alt}
         >
-          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="lightbox-content"
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => {
+              pointerStartRef.current = { x: e.clientX, y: e.clientY, time: Date.now() };
+            }}
+            onPointerUp={(e) => {
+              const dx = e.clientX - pointerStartRef.current.x;
+              const dy = e.clientY - pointerStartRef.current.y;
+              const absX = Math.abs(dx);
+              const absY = Math.abs(dy);
+
+              // Swipe down to close (dominant vertical swipe > 50px)
+              if (dy > 50 && absY > absX * 1.2) {
+                closeLightbox();
+                return;
+              }
+
+              // Swipe horizontal to change photo (> 40px)
+              if (absX > 40 && absX > absY) {
+                const currentIdx = photos.findIndex(p => p.id === activePhoto?.id);
+                if (currentIdx === -1) return;
+                if (dx < 0) {
+                  const nextIdx = (currentIdx + 1) % photos.length;
+                  setActivePhoto(photos[nextIdx]);
+                } else {
+                  const prevIdx = (currentIdx - 1 + photos.length) % photos.length;
+                  setActivePhoto(photos[prevIdx]);
+                }
+              }
+            }}
+          >
             <button
               type="button"
               className="lightbox-close"
@@ -471,6 +524,10 @@ export const Work = () => {
             <img
               src={activePhoto.src}
               alt={activePhoto.alt}
+              width="800"
+              height="1000"
+              loading="lazy"
+              decoding="async"
               className="lightbox-img"
             />
             <div className="lightbox-footer">
@@ -485,9 +542,20 @@ export const Work = () => {
                   {activePhoto.description || activePhoto.alt}
                 </span>
               </div>
-              <span className="lightbox-nav-shortcut">
-                Left / Right arrows · Esc to close
-              </span>
+              <div className="lightbox-actions-pane">
+                <a
+                  href={whatsappFor(`this look: ${activePhoto.title}`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary lightbox-book-btn"
+                >
+                  <span>Book this look</span>
+                  <span className="btn-arrow">→</span>
+                </a>
+                <span className="lightbox-nav-shortcut">
+                  Left / Right arrows · Esc to close
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -679,6 +747,7 @@ export const Work = () => {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          object-position: 50% 20%;
           display: block;
           transition: transform 0.6s var(--ease-editorial);
           pointer-events: none; /* Prevents ghost image drag */
@@ -720,7 +789,7 @@ export const Work = () => {
         .work-category-badge {
           display: inline-block;
           font-family: var(--font-body);
-          font-size: 0.7rem;
+          font-size: 0.75rem;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.08em;
@@ -826,6 +895,18 @@ export const Work = () => {
           line-height: 1.4;
         }
 
+        .lightbox-actions-pane {
+          display: flex;
+          align-items: center;
+          gap: 1.25rem;
+          flex-wrap: wrap;
+        }
+
+        .lightbox-book-btn {
+          padding: 0.5rem 1rem;
+          font-size: 0.8125rem;
+        }
+
         .lightbox-nav-shortcut {
           font-size: 0.75rem;
           color: var(--color-muted);
@@ -847,26 +928,60 @@ export const Work = () => {
         @media (max-width: 860px) {
           .work-header-actions {
             width: 100%;
-            justify-content: flex-start;
+            justify-content: space-between;
+            align-items: center;
           }
           .work-filter-pills {
             width: 100%;
             overflow-x: auto;
             white-space: nowrap;
+            mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+            scrollbar-width: none;
+          }
+          .work-filter-pills::-webkit-scrollbar {
+            display: none;
           }
           .work-horizontal-track {
             cursor: default;
             padding: 0 clamp(1.25rem, 4.5vw, 4rem) 1rem;
+            scroll-snap-type: x mandatory;
+            overscroll-behavior-x: contain;
           }
           .work-gallery-card {
             flex: 0 0 85vw;
             min-width: 280px;
+            scroll-snap-align: center;
           }
           .work-cursor-badge {
             display: none !important;
           }
           .work-controls-pane {
+            display: flex;
+            align-items: center;
+            margin-top: 0.5rem;
+          }
+          .work-nav-arrows {
             display: none;
+          }
+        }
+
+        .lightbox-content {
+          touch-action: none;
+        }
+
+        @media (pointer: coarse) {
+          .work-filter-pill {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+          }
+          .services-link-action {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
           }
         }
       `}</style>

@@ -40,8 +40,8 @@ export const Marquee = () => {
         currentSkew += (skewTarget - currentSkew) * 0.08;
         skewTarget *= 0.94; // Decay skew back to 0
 
-        // Move marquee
-        currentX -= currentVelocity * 1.5;
+        // Move marquee at calm, quiet divider pace
+        currentX -= currentVelocity * 0.42;
 
         // Seamless wrap around half width
         if (trackRef.current) {
@@ -63,7 +63,7 @@ export const Marquee = () => {
       return () => {
         gsap.ticker.remove(tickerFunc);
       };
-    }, marqueeRef);
+    }, marqueeRef.current);
 
     return () => ctx.revert();
   }, []);
@@ -85,7 +85,7 @@ export const Marquee = () => {
           overflow: hidden;
           background: var(--color-surface);
           border-bottom: 1px solid var(--color-border);
-          padding: 1.1rem 0;
+          padding: 0.5rem 0;
           white-space: nowrap;
           user-select: none;
         }
@@ -104,16 +104,19 @@ export const Marquee = () => {
         }
 
         .marquee-text {
-          font-family: var(--font-serif);
-          font-size: clamp(1.15rem, 1.8vw, 1.5rem);
-          color: var(--color-text);
-          letter-spacing: -0.01em;
-          text-transform: none;
+          font-family: var(--font-sans);
+          font-size: clamp(0.7rem, 0.85vw, 0.8125rem);
+          font-weight: 400;
+          color: var(--color-muted);
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          opacity: 0.85;
         }
 
         .marquee-dot {
           color: var(--color-accent);
-          font-size: 1.25rem;
+          font-size: 0.75rem;
+          opacity: 0.75;
         }
       `}</style>
     </div>

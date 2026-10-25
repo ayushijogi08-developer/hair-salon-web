@@ -9,26 +9,28 @@ export const WordFillParagraph = ({ children, className = '', style = {} }) => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion || !pRef.current) return;
 
+    const isMobile = window.matchMedia('(max-width: 860px)').matches;
+
     let split = null;
     const ctx = gsap.context(() => {
       split = new SplitText(pRef.current, { type: 'words' });
 
-      // Words go from 20% to 100% opacity as you scroll
+      // Words go from 35% to 100% opacity as you scroll
       gsap.fromTo(split.words,
-        { opacity: 0.2 },
+        { opacity: 0.35 },
         {
           opacity: 1,
           stagger: 0.05,
           ease: 'none',
           scrollTrigger: {
             trigger: pRef.current,
-            start: 'top 85%',
-            end: 'bottom 60%',
+            start: isMobile ? 'top 92%' : 'top 85%',
+            end: isMobile ? 'top 55%' : 'bottom 60%',
             scrub: true
           }
         }
       );
-    }, pRef);
+    }, pRef.current);
 
     return () => {
       ctx.revert();
@@ -62,7 +64,8 @@ export const SectionEyebrowRow = ({ label, num }) => {
         ease: 'power3.out',
         scrollTrigger: {
           trigger: rowRef.current,
-          start: 'top 90%'
+          start: 'top 90%',
+          once: true
         },
         onUpdate: () => {
           if (numRef.current) {
@@ -70,7 +73,7 @@ export const SectionEyebrowRow = ({ label, num }) => {
           }
         }
       });
-    }, rowRef);
+    }, rowRef.current);
 
     return () => ctx.revert();
   }, [num]);
