@@ -16,7 +16,7 @@ export const ServicesOverview = () => {
 
   // 4 curated imagery states corresponding to each discipline
   const serviceImages = [
-    { src: siteData.images.cutting?.src, alt: "Precision haircutting & styling" },
+    { src: siteData.images.cutting?.girlCut?.src || siteData.images.cutting?.src, alt: "Precision haircutting & styling" },
     { src: siteData.images.colour?.src, alt: "Bespoke hair colour consultation" },
     { src: siteData.images.treatments?.src, alt: "Restorative hair therapy" },
     { src: siteData.images.academy?.src, alt: "Professional academy training studio" }
@@ -241,6 +241,11 @@ export const ServicesOverview = () => {
         .service-overview-row.active-row {
           transform: translateX(8px);
           border-bottom-color: var(--color-accent);
+        }
+
+        .service-overview-row:last-child,
+        .service-overview-row:last-child.active-row {
+          border-bottom: none;
         }
 
         .service-row-leading {

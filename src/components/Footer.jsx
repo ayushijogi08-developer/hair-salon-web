@@ -107,7 +107,7 @@ export const Footer = () => {
               fontWeight: 400,
               letterSpacing: '-0.04em',
               textTransform: 'uppercase',
-              color: 'var(--color-surface-elevated)',
+              color: '#D9D1C6',
               userSelect: 'none',
               whiteSpace: 'nowrap',
               willChange: 'transform, opacity'

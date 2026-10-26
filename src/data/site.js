@@ -51,7 +51,8 @@ export const siteData = {
   phoneRaw: "+917057174147",
   hours: {
     days: "Monday – Sunday",
-    time: "9:00 AM – 10:00 PM"
+    time: "9:00 AM – 10:00 PM",
+    closedDates: [] // e.g. ["2026-11-09"] (YYYY-MM-DD, India time)
   },
   coordinates: {
     lat: 20.7122645,
@@ -121,7 +122,7 @@ export const siteData = {
 
   // --- CUTTING & STYLING ---
   cutting: {
-    num: "01",
+    num: "",
     tagline: "Precision & Profile",
     title: "Cutting & Styling",
     lead: "Every cut starts with a short consultation about face shape, hair type and daily routine.",
@@ -136,7 +137,7 @@ export const siteData = {
 
   // --- HAIR COLOUR ---
   colour: {
-    num: "02",
+    num: "",
     tagline: "Tone & Dimension",
     title: "Hair Colour",
     lead: "Colour is planned around your natural base shade, skin undertone and hair condition.",
@@ -152,7 +153,7 @@ export const siteData = {
 
   // --- HAIR TREATMENTS ---
   treatments: {
-    num: "03",
+    num: "",
     tagline: "Restoration & Health",
     title: "Hair Treatments",
     lead: "Treatments target the problem, not just the look.",
@@ -168,7 +169,7 @@ export const siteData = {
 
   // --- ACADEMY (FULL SECTION) ---
   academy: {
-    num: "04",
+    num: "02",
     eyebrow: "Professional Hair Education",
     headline: "Learn hair the way it is done in a working salon.",
     intro: "The academy trains beginners and aspiring stylists in the practical skills of the trade, in the same space where clients are served.",
@@ -246,7 +247,7 @@ export const siteData = {
       {
         id: "work-01",
         category: "boys",
-        categoryLabel: "Boys Cut",
+        categoryLabel: "Men's Cut",
         title: "Modern Fade & Pompadour",
         description: "High skin fade paired with textured volume and sharp hairline perimeter.",
         src: resolveImage('boy-cut-01.jpg'),
@@ -257,7 +258,7 @@ export const siteData = {
       {
         id: "work-02",
         category: "boys",
-        categoryLabel: "Boys Cut",
+        categoryLabel: "Men's Cut",
         title: "Classic Scissor Taper & Beard",
         description: "Scissor-over-comb graduation, textured side part, and clean beard contouring.",
         src: resolveImage('boy-cut-02.jpg'),
@@ -268,7 +269,7 @@ export const siteData = {
       {
         id: "work-03",
         category: "boys",
-        categoryLabel: "Boys Cut",
+        categoryLabel: "Men's Cut",
         title: "Mid Drop Fade & Volume Top",
         description: "Graduated temple fade with slicked textured volume and shaped stubble profile.",
         src: resolveImage('boy-cut-03.jpg'),
@@ -279,7 +280,7 @@ export const siteData = {
       {
         id: "work-04",
         category: "girls",
-        categoryLabel: "Girls Cut",
+        categoryLabel: "Women's Cut",
         title: "Multi-Layer Step Cut & Blowout",
         description: "Butterfly step graduation on long hair with curved inward blowout curvature.",
         src: resolveImage('girl-cut-01.jpg'),
@@ -290,7 +291,7 @@ export const siteData = {
       {
         id: "work-05",
         category: "girls",
-        categoryLabel: "Girls Cut",
+        categoryLabel: "Women's Cut",
         title: "Cascading Feather Layers",
         description: "V-cut silhouette with feather layering, zero frizz, and restorative mirror shine.",
         src: resolveImage('girl-cut-02.jpg'),
@@ -301,7 +302,7 @@ export const siteData = {
       {
         id: "work-06",
         category: "girls",
-        categoryLabel: "Girls Cut",
+        categoryLabel: "Women's Cut",
         title: "Caramel Balayage & Waves",
         description: "Multi-dimensional caramel and hazelnut tones with outward-bounced curled layers.",
         src: resolveImage('girl-cut-03.jpg'),
@@ -312,7 +313,7 @@ export const siteData = {
       {
         id: "work-07",
         category: "girls",
-        categoryLabel: "Girls Cut",
+        categoryLabel: "Women's Cut",
         title: "Curtain Bangs & Face Framing",
         description: "Soft cheekbone-skimming curtain fringe with layered collarbone blowout texture.",
         src: resolveImage('girl-cut-04.jpg'),
@@ -365,17 +366,27 @@ export const siteData = {
   ],
 
   faq: [
-    /* Example format:
     {
       id: "f1",
       question: "Do I need an appointment?",
-      answer: "Walk-ins are welcome, but appointments ensure your preferred time.",
-      confirmed: false
+      answer: "Walk-ins are welcome, but booking on WhatsApp guarantees your preferred time.",
+      confirmed: true
+    },
+    {
+      id: "f2",
+      question: "Which days are you open?",
+      answer: "Every day, 9:00 AM to 10:00 PM.",
+      confirmed: true
     }
-    */
   ],
 
-  academyDetails: null,
+  academyDetails: {
+    duration: "3 Months",
+    feeRange: "Shared on enquiry",
+    nextBatch: "1st of every month",
+    certificate: "Certificate on completion",
+    confirmed: true
+  },
   /* Example format when confirmed:
   academyDetails: {
     duration: "3 Months (Full-Time)",

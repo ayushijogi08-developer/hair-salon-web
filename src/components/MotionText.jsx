@@ -17,7 +17,7 @@ export const WordFillParagraph = ({ children, className = '', style = {} }) => {
 
       // Words go from 35% to 100% opacity as you scroll
       gsap.fromTo(split.words,
-        { opacity: 0.35 },
+        { opacity: 0.7 },
         {
           opacity: 1,
           stagger: 0.05,
@@ -25,7 +25,7 @@ export const WordFillParagraph = ({ children, className = '', style = {} }) => {
           scrollTrigger: {
             trigger: pRef.current,
             start: isMobile ? 'top 92%' : 'top 85%',
-            end: isMobile ? 'top 55%' : 'bottom 60%',
+            end: isMobile ? 'top 70%' : 'bottom 45%',
             scrub: true
           }
         }
@@ -81,7 +81,7 @@ export const SectionEyebrowRow = ({ label, num }) => {
   return (
     <div className="section-eyebrow-row" ref={rowRef}>
       <span className="section-label" style={{ marginBottom: 0 }}>{label}</span>
-      <span className="section-oversized-num" ref={numRef}>{num}</span>
+      {num ? <span className="section-oversized-num" ref={numRef}>{num}</span> : null}
     </div>
   );
 };

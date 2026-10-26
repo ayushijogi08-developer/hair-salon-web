@@ -24,6 +24,13 @@ function parseTimeString(str) {
 export function getBusinessStatus(hoursConfig = siteData?.hours) {
   try {
     const now = new Date();
+
+    // Manual closure days (festivals etc.)
+    const todayIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(now);
+    if (hoursConfig?.closedDates?.includes(todayIST)) {
+      return { isOpen: false, badgeText: 'Closed today' };
+    }
+
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Asia/Kolkata',
       hour: 'numeric',

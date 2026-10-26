@@ -118,9 +118,8 @@ export const Visit = () => {
               </div>
               <span className="visit-highlight">{siteData.hours.days}</span>
               <span className="visit-hours">{siteData.hours.time}</span>
-              <p className="visit-note">Open daily, including weekends.</p>
             </div>
-            <div style={{ marginTop: 'auto', paddingTop: '1.5rem' }}>
+            <div className="visit-actions">
               <a
                 href={`tel:${siteData.phoneRaw}`}
                 className="btn btn-secondary"
@@ -128,6 +127,7 @@ export const Visit = () => {
               >
                 Call {siteData.phone}
               </a>
+              <p className="visit-actions-note">Open daily, including weekends.</p>
             </div>
           </div>
 
@@ -135,14 +135,14 @@ export const Visit = () => {
           <div className="visit-pane">
             <span className="editorial-label">Studio Address</span>
             <div className="visit-pane-content">
-              <address style={{ fontStyle: 'normal', fontSize: '1rem', lineHeight: '1.5', color: 'var(--color-text)' }}>
+              <address style={{ fontStyle: 'normal', fontSize: '1.0625rem', lineHeight: '1.6', color: 'var(--color-text)' }}>
                 <strong>{siteData.name}</strong><br />
                 {siteData.address.line1}<br />
                 {siteData.address.line2}<br />
                 {siteData.address.city}, {siteData.address.state} — {siteData.address.pincode}
               </address>
             </div>
-            <div style={{ marginTop: 'auto', paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div className="visit-actions">
               <a
                 href={siteData.links.directions}
                 target="_blank"
@@ -157,7 +157,7 @@ export const Visit = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="visit-maps-link"
-                style={{ fontSize: '0.8125rem', color: 'var(--color-muted)', textAlign: 'center', textDecoration: 'underline' }}
+                style={{ fontSize: '0.8125rem', color: 'var(--color-muted)', textDecoration: 'underline' }}
               >
                 View on Google Maps
               </a>
@@ -168,11 +168,11 @@ export const Visit = () => {
           <div className="visit-pane">
             <span className="editorial-label">Direct Communication</span>
             <div className="visit-pane-content">
-              <p style={{ fontSize: '0.9375rem', color: 'var(--color-text)', marginBottom: '1rem' }}>
+              <p style={{ fontSize: '1.0625rem', lineHeight: 1.6, color: 'var(--color-text)', marginBottom: '1rem' }}>
                 Quick response on WhatsApp for haircut appointments, hair colour consultations, or academy admissions.
               </p>
             </div>
-            <div style={{ marginTop: 'auto', paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="visit-actions">
               <a
                 href={siteData.links.whatsappGeneral}
                 target="_blank"
@@ -316,6 +316,38 @@ export const Visit = () => {
           border: 1px solid var(--color-border);
         }
 
+                /* Equal button rows across the three cards */
+        .visit-actions {
+          margin-top: auto;
+          padding-top: 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .visit-actions .btn {
+          width: 100%;
+          min-height: 3rem;
+          justify-content: center;
+        }
+
+        .visit-maps-link {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 3rem;
+        }
+
+        .visit-actions-note {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 3rem;
+          margin: 0;
+          font-size: 0.8125rem;
+          color: var(--color-muted);
+        }
+          
         .editorial-label {
           display: block;
           font-size: var(--size-micro);
@@ -426,7 +458,7 @@ export const Visit = () => {
           display: none;
         }
 
-        @media (hover: none) {
+              @media (hover: none), (pointer: coarse) {
           .map-prompt-hover {
             display: none;
           }

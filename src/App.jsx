@@ -137,12 +137,18 @@ export function App() {
 
   return (
     <>
-      <a href="#hero" className="skip-link">Skip to main content</a>
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <div id="scroll-progress-indicator" aria-hidden="true"></div>
-      {!preloaderDone && <Preloader onComplete={() => setPreloaderDone(true)} />}
-
+      {!preloaderDone && (
+        <Preloader
+          onComplete={() => {
+            setPreloaderDone(true);
+            requestAnimationFrame(() => ScrollTrigger.refresh());
+          }}
+        />
+      )}
       <Header />
-      <main id="main-content">
+      <main id="main-content" tabIndex={-1}>
         <Hero />
         <Marquee />
         <ServicesOverview />

@@ -54,6 +54,19 @@ export const Work = () => {
     }
   }, [activePhoto]);
 
+  // Lock page scroll (Lenis + native) while the lightbox is open
+  const lightboxOpen = Boolean(activePhoto);
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    window.lenis?.stop();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.lenis?.start();
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [lightboxOpen]);
+
   // Keyboard navigation for lightbox
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -323,7 +336,7 @@ export const Work = () => {
       </div>
 
       <div className="container">
-        <SectionEyebrowRow label="Selected Cuts & Colour" num="05" />
+        <SectionEyebrowRow label="Selected Cuts & Colour" num="03" />
 
         {/* Header with Counter, Category Filter and Navigation Controls */}
         <div className="work-header-row">
@@ -345,7 +358,7 @@ export const Work = () => {
                 className={`work-filter-pill ${filterCategory === 'all' ? 'active' : ''}`}
                 onClick={() => handleFilterChange('all')}
               >
-                All Cuts ({allPhotos.length})
+                All ({allPhotos.length})
               </button>
               <button
                 type="button"
@@ -353,7 +366,7 @@ export const Work = () => {
                 className={`work-filter-pill ${filterCategory === 'boys' ? 'active' : ''}`}
                 onClick={() => handleFilterChange('boys')}
               >
-                Boys Cuts ({boysCount})
+                Men's ({boysCount})
               </button>
               <button
                 type="button"
@@ -361,7 +374,7 @@ export const Work = () => {
                 className={`work-filter-pill ${filterCategory === 'girls' ? 'active' : ''}`}
                 onClick={() => handleFilterChange('girls')}
               >
-                Girls Cuts ({girlsCount})
+                Women's ({girlsCount})
               </button>
             </div>
 
@@ -459,7 +472,7 @@ export const Work = () => {
 
       <div className="container">
         {/* Instagram Link */}
-        <div style={{ marginTop: '3rem', textAlign: 'center' }}>
+        <div className="work-instagram-row">
           <a
             href={siteData.links.instagram}
             target="_blank"
@@ -562,8 +575,14 @@ export const Work = () => {
       )}
 
       <style>{`
-        #work {
+        #work.section {
           position: relative;
+          padding-top: clamp(36px, 4.5vw, 60px);
+          padding-bottom: clamp(36px, 4.5vw, 60px);
+        }
+
+        #work .section-eyebrow-row {
+          margin-bottom: clamp(1rem, 2vw, 1.5rem);
         }
 
         .work-cursor-badge {
@@ -591,14 +610,14 @@ export const Work = () => {
           align-items: flex-end;
           justify-content: space-between;
           flex-wrap: wrap;
-          gap: 1.5rem;
-          margin-bottom: 2rem;
+          gap: 1.25rem;
+          margin-bottom: 1.25rem;
         }
 
         .work-header-actions {
           display: flex;
           align-items: center;
-          gap: 1.5rem;
+          gap: 1.25rem;
           flex-wrap: wrap;
         }
 
@@ -637,12 +656,12 @@ export const Work = () => {
         .work-controls-pane {
           display: flex;
           align-items: center;
-          gap: 1.5rem;
+          gap: 1.25rem;
         }
 
         .work-counter-text {
           font-family: var(--font-serif);
-          font-size: 1.25rem;
+          font-size: 1.15rem;
           color: var(--color-accent);
           font-weight: 500;
           letter-spacing: 0.05em;
@@ -654,8 +673,8 @@ export const Work = () => {
         }
 
         .work-arrow-btn {
-          width: 44px;
-          height: 44px;
+          width: 40px;
+          height: 40px;
           background: transparent;
           border: 1px solid var(--color-border);
           color: var(--color-text);
@@ -663,7 +682,7 @@ export const Work = () => {
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          font-size: 1.15rem;
+          font-size: 1.1rem;
           border-radius: 2px;
           transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
         }
@@ -683,7 +702,7 @@ export const Work = () => {
           width: 100%;
           height: 2px;
           background: var(--color-border);
-          margin-bottom: 2.5rem;
+          margin-bottom: 1.25rem;
           overflow: hidden;
         }
 
@@ -704,11 +723,11 @@ export const Work = () => {
         .work-horizontal-track {
           display: flex;
           flex-direction: row;
-          gap: 24px;
+          gap: 20px;
           overflow-x: auto;
           scroll-snap-type: x mandatory;
           -webkit-overflow-scrolling: touch;
-          padding: 0 clamp(1.25rem, 4.5vw, 4rem) 1.5rem;
+          padding: 0 clamp(1.25rem, 4.5vw, 4rem) 1rem;
           cursor: grab;
           user-select: none;
           /* Hide scrollbar visually while keeping it scrollable */
@@ -726,9 +745,9 @@ export const Work = () => {
         }
 
         .work-gallery-card {
-          flex: 0 0 42vw;
-          min-width: 320px;
-          max-width: 600px;
+          flex: 0 0 clamp(230px, min(23vw, 36vh), 310px);
+          min-width: 210px;
+          max-width: 330px;
           scroll-snap-align: start;
           position: relative;
           cursor: pointer;
@@ -741,6 +760,7 @@ export const Work = () => {
           border: 1px solid var(--color-border);
           aspect-ratio: 4/5;
           width: 100%;
+          border-radius: 4px;
         }
 
         .work-photo-img {
@@ -761,11 +781,12 @@ export const Work = () => {
         .work-card-overlay {
           position: absolute;
           inset: 0;
-          background: linear-gradient(to top, rgba(20, 18, 17, 0.7) 0%, rgba(20, 18, 17, 0.2) 35%, transparent 60%);
+          background: linear-gradient(to top, rgba(20, 18, 17, 0.8) 0%, rgba(20, 18, 17, 0.25) 35%, transparent 60%);
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
-          padding: 1.25rem 1.5rem;
+          padding: 0.85rem 1rem;
+          gap: 0.5rem;
           opacity: 0.95;
           transition: opacity var(--transition-fast);
         }
@@ -777,11 +798,12 @@ export const Work = () => {
         .work-card-meta {
           display: flex;
           flex-direction: column;
+          min-width: 0;
         }
 
         .work-num-label {
           font-family: var(--font-serif);
-          font-size: 1.25rem;
+          font-size: 1.05rem;
           color: #FFFFFF;
           line-height: 1;
         }
@@ -789,36 +811,43 @@ export const Work = () => {
         .work-category-badge {
           display: inline-block;
           font-family: var(--font-body);
-          font-size: 0.75rem;
+          font-size: 0.6875rem;
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.08em;
           color: #FFFFFF;
           background: var(--color-accent);
-          padding: 0.2rem 0.55rem;
+          padding: 0.15rem 0.45rem;
           border-radius: 2px;
+          white-space: nowrap;
         }
 
         .work-card-title {
           font-family: var(--font-serif);
-          font-size: 1.2rem;
+          font-size: 0.95rem;
           color: #FFFFFF;
           margin: 0;
           line-height: 1.25;
           text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
 
         .work-zoom-hint {
-          font-size: 0.75rem;
-          letter-spacing: 0.08em;
+          font-size: 0.7rem;
+          letter-spacing: 0.06em;
           text-transform: uppercase;
           color: #FFFFFF;
           font-weight: 500;
           background: rgba(20, 18, 17, 0.6);
-          padding: 0.3rem 0.65rem;
+          padding: 0.25rem 0.5rem;
           border-radius: 2px;
           backdrop-filter: blur(4px);
           align-self: flex-end;
+          white-space: nowrap;
+          flex-shrink: 0;
         }
 
         .lightbox-overlay {
@@ -913,6 +942,11 @@ export const Work = () => {
           white-space: nowrap;
         }
 
+        .work-instagram-row {
+          margin-top: clamp(1.25rem, 2vw, 1.75rem);
+          text-align: center;
+        }
+
         .services-link-action {
           font-family: var(--font-serif);
           font-size: 1.15rem;
@@ -926,6 +960,17 @@ export const Work = () => {
         }
 
         @media (max-width: 860px) {
+          #work.section {
+            padding-top: 32px;
+            padding-bottom: 36px;
+          }
+          .work-header-row {
+            margin-bottom: 1rem;
+            gap: 1rem;
+          }
+          .work-progress-bar-wrap {
+            margin-bottom: 1rem;
+          }
           .work-header-actions {
             width: 100%;
             justify-content: space-between;
@@ -944,13 +989,13 @@ export const Work = () => {
           }
           .work-horizontal-track {
             cursor: default;
-            padding: 0 clamp(1.25rem, 4.5vw, 4rem) 1rem;
+            padding: 0 clamp(1.25rem, 4.5vw, 4rem) 0.75rem;
             scroll-snap-type: x mandatory;
             overscroll-behavior-x: contain;
           }
           .work-gallery-card {
-            flex: 0 0 85vw;
-            min-width: 280px;
+            flex: 0 0 clamp(220px, 70vw, 290px);
+            min-width: 200px;
             scroll-snap-align: center;
           }
           .work-cursor-badge {

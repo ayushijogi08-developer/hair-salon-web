@@ -4,10 +4,15 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { siteData } from '../data/site';
 import { WordFillParagraph, SectionEyebrowRow } from '../components/MotionText';
 
+
+// Phones: ignore the address bar showing/hiding so the pinned section doesn't jump
+ScrollTrigger.config({ ignoreMobileResize: true });
+
 export const Academy = () => {
   const data = siteData.academy;
   const academySectionRef = useRef(null);
   const stageRef = useRef(null);
+  const pinWrapRef = useRef(null);
   const stepsSvgRef = useRef(null);
   const progressLineRef = useRef(null);
 
@@ -72,7 +77,7 @@ export const Academy = () => {
       const cards = gsap.utils.toArray('.academy-step-card');
       const numSteps = data.modules.length;
 
-      if (isDesktop) {
+      if (isDesktop || isMobile) {
         let activeTimeline = null;
 
         // Reset a card and all its child elements to a complete, visible resting state
@@ -244,12 +249,15 @@ export const Academy = () => {
 
         // Pinned stage ScrollTrigger
         if (stageRef.current) {
+          // Phones pin heading + stage together; desktop pins only the stage
+          const pinEl = isMobile && pinWrapRef.current ? pinWrapRef.current : stageRef.current;
           const st = ScrollTrigger.create({
-            trigger: stageRef.current,
-            pin: true,
+            trigger: pinEl,
+            pin: pinEl,
             anticipatePin: 1,
-            start: 'top top',
-            end: () => '+=' + (numSteps * 100) + '%',
+            // If the group is taller than a short phone screen, keep the card in view
+            start: () => (isMobile && pinEl.offsetHeight > window.innerHeight ? 'bottom bottom' : 'top top'),
+            end: () => '+=' + (numSteps * (isMobile ? 45 : 60)) + '%',
             onEnter: (self) => {
               const targetIdx = Math.min(numSteps - 1, Math.max(0, Math.floor(self.progress * numSteps)));
               snapTo(targetIdx);
@@ -373,16 +381,18 @@ export const Academy = () => {
   // Click handler for left list items: scrolls with lenis.scrollTo (1.2s easeInOut), then goTo(i)
   const handleStepClick = (targetIdx) => {
     const st = scrollTriggerInstanceRef.current;
-    if (st && window.lenis) {
+    if (st) {
       const scrollPos = st.start + ((targetIdx + 0.25) / data.modules.length) * (st.end - st.start);
-      window.lenis.scrollTo(scrollPos, {
-        duration: 1.2,
-        easing: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
-      });
-      if (goToRef.current) {
-        goToRef.current(targetIdx);
+      if (window.lenis) {
+        window.lenis.scrollTo(scrollPos, {
+          duration: 1.2,
+          easing: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+        });
+      } else {
+        window.scrollTo({ top: scrollPos, behavior: 'smooth' });
       }
-    } else if (goToRef.current) {
+    }
+    if (goToRef.current) {
       goToRef.current(targetIdx);
     } else {
       setActiveIndex(targetIdx);
@@ -396,128 +406,131 @@ export const Academy = () => {
       ref={academySectionRef}
       aria-labelledby="academy-title"
     >
-      <div className="container academy-container-top">
-        <SectionEyebrowRow label={data.eyebrow} num={data.num} />
+      <div className="academy-pin-wrap" ref={pinWrapRef}>
+        <div className="container academy-container-top">
+          <SectionEyebrowRow label={data.eyebrow} num={data.num} />
 
-        {/* Section Header */}
-        <div className="academy-hero-grid">
-          <div className="academy-header-text">
-            <h2 id="academy-title" className="academy-main-title">
-              {data.headline}
-            </h2>
-            <WordFillParagraph style={{ fontSize: 'clamp(1.125rem, 1.5vw, 1.35rem)', color: 'var(--color-dark-muted)', lineHeight: '1.5' }}>
-              {data.intro}
-            </WordFillParagraph>
+          {/* Section Header */}
+          <div className="academy-hero-grid">
+            <div className="academy-header-text">
+              <h2 id="academy-title" className="academy-main-title">
+                {data.headline}
+              </h2>
+              <WordFillParagraph style={{ fontSize: 'clamp(1.125rem, 1.5vw, 1.35rem)', color: 'var(--color-dark-muted)', lineHeight: '1.5' }}>
+                {data.intro}
+              </WordFillParagraph>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* 4) PINNED STAGE THAT FITS THE VIEWPORT (100svh, padding-top: header, align-content: center) */}
-      <div className="academy-stage-wrapper" ref={stageRef}>
-        <div className="container academy-stage-inner">
-          {/* Header row inside stage: sticky on mobile with counter and progress bar */}
-          <div className="academy-mobile-sticky-header">
-            <div className="academy-stage-header-row">
-              <span className="section-label" style={{ color: 'var(--color-dark-muted)', marginBottom: 0 }}>
-                What you can learn
-              </span>
-              <span className="academy-step-counter" aria-live="polite">
-                0{activeIndex + 1} / 0{data.modules.length}
-              </span>
-            </div>
-
-            {/* Continuous progress track line */}
-            <div className="academy-progress-bar-wrap" aria-hidden="true">
-              <div className="academy-progress-bar-fill" ref={progressLineRef}></div>
-            </div>
-          </div>
-
-          {/* Main 2-column stage layout */}
-          <div className="academy-stage-grid">
-            {/* Left list: 4 items with highlight & clickable to scroll */}
-            <nav className="academy-stepper-nav" aria-label="Course modules">
-              <div className="academy-rail-track" aria-hidden="true">
-                <div
-                  className="academy-rail-dot"
-                  style={{
-                    transform: `translateY(${activeIndex * 100}%)`
-                  }}
-                ></div>
+        {/* 4) PINNED STAGE THAT FITS THE VIEWPORT (100svh, padding-top: header, align-content: center) */}
+        <div className="academy-stage-wrapper" ref={stageRef}>
+          <div className="container academy-stage-inner">
+            {/* Header row inside stage: sticky on mobile with counter and progress bar */}
+            <div className="academy-mobile-sticky-header">
+              <div className="academy-stage-header-row">
+                <span className="section-label" style={{ color: 'var(--color-dark-muted)', marginBottom: 0 }}>
+                  What you can learn
+                </span>
+                <span className="academy-step-counter" aria-live="polite">
+                  0{activeIndex + 1} / 0{data.modules.length}
+                </span>
               </div>
 
-              {data.modules.map((m, idx) => (
-                <button
-                  key={m.num}
-                  type="button"
-                  id={`academy-step-btn-${idx}`}
-                  aria-current={activeIndex === idx ? 'step' : undefined}
-                  className={`academy-stepper-btn ${activeIndex === idx ? 'active' : ''}`}
-                  onClick={() => handleStepClick(idx)}
-                >
-                  <span className="stepper-dot-indicator"></span>
-                  <span className="stepper-label">
-                    <strong>{m.num}</strong> {m.title}
-                  </span>
-                </button>
-              ))}
-            </nav>
+              {/* Continuous progress track line */}
+              <div className="academy-progress-bar-wrap" aria-hidden="true">
+                <div className="academy-progress-bar-fill" ref={progressLineRef}></div>
+              </div>
+            </div>
 
-            {/* Right: Pinned card stage with 4 steps stacked in the same grid cell */}
-            <div className="academy-card-stage">
-              {data.modules.map((m, idx) => (
-                <div
-                  key={m.num}
-                  id={`academy-panel-${idx}`}
-                  className="academy-step-card"
-                >
-                  {/* Faint outlined background numeral for parallax */}
-                  <span className="step-parallax-num" aria-hidden="true">
-                    {m.num}
-                  </span>
+            {/* Main 2-column stage layout */}
+            <div className="academy-stage-grid">
+              {/* Left list: 4 items with highlight & clickable to scroll */}
+              <nav className="academy-stepper-nav" aria-label="Course modules">
+                <div className="academy-rail-track" aria-hidden="true">
+                  <div
+                    className="academy-rail-dot"
+                    style={{
+                      transform: `translateY(${activeIndex * 100}%)`
+                    }}
+                  ></div>
+                </div>
 
-                  <div className="academy-step-card-inner">
-                    {/* Phase number inside overflow-hidden mask */}
-                    <div className="step-mask-wrap step-badge-mask">
-                      <div className="academy-step-badge-row step-anim-phase-num">
-                        <span className="academy-step-giant-num">{m.num}</span>
-                        <span className="academy-step-tag">Phase {m.num}</span>
+                {data.modules.map((m, idx) => (
+                  <button
+                    key={m.num}
+                    type="button"
+                    id={`academy-step-btn-${idx}`}
+                    aria-current={activeIndex === idx ? 'step' : undefined}
+                    className={`academy-stepper-btn ${activeIndex === idx ? 'active' : ''}`}
+                    onClick={() => handleStepClick(idx)}
+                  >
+                    <span className="stepper-dot-indicator"></span>
+                    <span className="stepper-label">
+                      <strong>{m.num}</strong> {m.title}
+                    </span>
+                  </button>
+                ))}
+              </nav>
+
+              {/* Right: Pinned card stage with 4 steps stacked in the same grid cell */}
+              <div className="academy-card-stage">
+                {data.modules.map((m, idx) => (
+                  <div
+                    key={m.num}
+                    id={`academy-panel-${idx}`}
+                    className="academy-step-card"
+                  >
+                    {/* Faint outlined background numeral for parallax */}
+                    <span className="step-parallax-num" aria-hidden="true">
+                      {m.num}
+                    </span>
+
+                    <div className="academy-step-card-inner">
+                      {/* Phase number inside overflow-hidden mask */}
+                      <div className="step-mask-wrap step-badge-mask">
+                        <div className="academy-step-badge-row step-anim-phase-num">
+                          <span className="academy-step-giant-num">{m.num}</span>
+                          <span className="academy-step-tag">Phase {m.num}</span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Title inside overflow-hidden mask */}
-                    <div className="step-mask-wrap step-title-mask">
-                      <h3 className="academy-step-card-title step-anim-title">
-                        {m.title}
-                      </h3>
-                    </div>
-
-                    {/* Description */}
-                    <p className="academy-step-card-desc step-anim-desc">
-                      {m.description}
-                    </p>
-
-                    {/* Detail with vertical accent line */}
-                    {m.detail && (
-                      <div className="step-detail-container">
-                        <div className="step-anim-accent-line" aria-hidden="true"></div>
-                        <p className="academy-step-card-detail step-anim-detail">
-                          {m.detail}
-                        </p>
+                      {/* Title inside overflow-hidden mask */}
+                      <div className="step-mask-wrap step-title-mask">
+                        <h3 className="academy-step-card-title step-anim-title">
+                          {m.title}
+                        </h3>
                       </div>
-                    )}
 
-                    {/* Small chips */}
-                    <div className="academy-step-footer-meta">
-                      <span className="step-anim-chip">Hands-on chair training</span>
-                      <span className="step-anim-chip">Real salon environment</span>
+                      {/* Description */}
+                      <p className="academy-step-card-desc step-anim-desc">
+                        {m.description}
+                      </p>
+
+                      {/* Detail with vertical accent line */}
+                      {m.detail && (
+                        <div className="step-detail-container">
+                          <div className="step-anim-accent-line" aria-hidden="true"></div>
+                          <p className="academy-step-card-detail step-anim-detail">
+                            {m.detail}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Small chips */}
+                      <div className="academy-step-footer-meta">
+                        <span className="step-anim-chip">Hands-on chair training</span>
+                        <span className="step-anim-chip">Real salon environment</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+
+      </div>{/* end academy-pin-wrap */}
 
       {/* Post-Pinned Editorial Details: Who it's for & How to join */}
       <div className="container academy-container-bottom">
@@ -1005,8 +1018,140 @@ export const Academy = () => {
           color: #FAF8F5;
         }
 
-        /* 8) FALLBACKS: Mobile & prefers-reduced-motion (no pinning, stacked list) */
+               /* MOBILE: same pinned scroll as desktop, compact layout */
         @media (max-width: 860px) {
+          /* Heading + stage are pinned together and fill the screen */
+          .academy-pin-wrap {
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            min-height: 100svh;
+            padding-top: var(--header-height, 64px);
+            padding-bottom: 72px;            /* Call/WhatsApp bar */
+          }
+          .academy-container-top {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+          }
+          .academy-main-title {
+            font-size: 1.85rem;
+            margin-bottom: 0.75rem;
+          }
+          .academy-header-text p {
+            font-size: 1rem !important;
+            line-height: 1.45 !important;
+          }
+          .academy-hero-grid {
+            margin-bottom: 0.5rem;
+          }
+          .academy-stage-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: auto;
+            max-height: none;
+            padding-top: 0;
+          }
+          .academy-stage-inner {
+            flex: 1;
+            max-height: none;
+          }
+          .academy-stage-grid {
+            flex: 1;
+          }
+          .academy-stage-header-row {
+            margin-bottom: 0.6rem;
+          }
+          .academy-progress-bar-wrap {
+            margin-bottom: 1rem;
+          }
+          .academy-stage-grid {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+          }
+
+          /* No step buttons on phones: the progress line + counter already show the step */
+          .academy-stepper-nav {
+            display: none;
+          }
+          .academy-rail-track,
+          .stepper-dot-indicator {
+            display: none;
+          }
+          .academy-stepper-btn {
+            flex: 1;
+            justify-content: center;
+            min-height: 44px;
+            padding: 0.4rem 0.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: transparent;
+          }
+          .academy-stepper-btn.active {
+            border-color: var(--color-dark-accent, #C88358);
+            background: rgba(200, 131, 88, 0.12);
+          }
+          .stepper-label {
+            font-size: 0;           /* hide the long title, keep it for screen readers */
+          }
+          .stepper-label strong {
+            font-size: 1rem;        /* show only 01 / 02 / 03 / 04 */
+          }
+
+          /* Card sized to fit a phone screen */
+          .academy-card-stage {
+            flex: 1;         /* card takes only the small leftover height */
+            min-height: 0;
+          }
+          .academy-step-card {
+            padding: 1.75rem 1.5rem;
+          }
+          .academy-step-giant-num {
+            font-size: 2.75rem;
+          }
+          .academy-step-card-title {
+            font-size: 2rem;
+            margin-bottom: 0.7rem;
+          }
+          .academy-step-card-desc {
+            font-size: 1.05rem;
+            margin-bottom: 1rem;
+          }
+          .step-detail-container {
+            margin-bottom: 1rem;
+          }
+          .academy-step-card-detail {
+            font-size: 0.95rem;
+          }
+          .academy-step-footer-meta {
+            gap: 0.5rem;
+            padding-top: 0.75rem;
+          }
+          .step-anim-chip {
+            font-size: 0.68rem;
+            padding: 0.3rem 0.55rem;
+          }
+          .step-parallax-num {
+            font-size: 8rem;
+            right: 1rem;
+          }
+
+          .academy-bottom-grid {
+            grid-template-columns: 1fr;
+            padding-top: 1.25rem;
+          }
+          .academy-container-bottom {
+            padding-top: 1.25rem;
+          }
+          .academy-action-footer {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+        }
+
+        /* Reduced motion (any screen): no pinning, show cards as a stacked list */
+        @media (prefers-reduced-motion: reduce) {
           .academy-stage-wrapper {
             height: auto;
             max-height: none;
@@ -1016,32 +1161,8 @@ export const Academy = () => {
           .academy-stage-inner {
             max-height: none;
           }
-          .academy-stage-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-          }
           .academy-stepper-nav {
             display: none;
-          }
-          .academy-mobile-sticky-header {
-            position: sticky;
-            top: var(--header-height, 72px);
-            transition: top 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-            z-index: 25;
-            background: #141211;
-            padding: 0.75rem 0 0.25rem 0;
-            margin-bottom: 1rem;
-          }
-          html[data-header='hidden'] .academy-mobile-sticky-header {
-            top: 0;
-          }
-          .academy-progress-bar-wrap {
-            display: block !important;
-            margin-bottom: 0.5rem;
-          }
-          .academy-stage-header-row {
-            margin-bottom: 0.5rem;
           }
           .academy-card-stage {
             display: flex;
@@ -1052,24 +1173,7 @@ export const Academy = () => {
             border: none;
           }
           .academy-step-card {
-            position: relative;
-            inset: auto;
-            display: flex;
-            background: #1E1B19;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 1.75rem 1.5rem;
-            opacity: 0.55;
-            transition: opacity 0.3s ease;
-          }
-          .academy-step-card.is-active {
-            opacity: 1;
-          }
-          .academy-bottom-grid {
-            grid-template-columns: 1fr;
-          }
-          .academy-action-footer {
-            flex-direction: column;
-            align-items: flex-start;
           }
         }
       `}</style>

@@ -298,9 +298,7 @@ export const Hero = () => {
                   aria-hidden="true"
                 />
                 <span className="hero-status-text">
-                  {businessStatus.isOpen
-                    ? `Open · ${siteData.hours.time}`
-                    : `Closed · ${siteData.hours.time}`}
+                  {businessStatus.badgeText}
                 </span>
               </div>
             </div>

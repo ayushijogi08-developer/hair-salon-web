@@ -56,11 +56,11 @@ export const CuttingSection = () => {
         stagger: 0.08,
         ease: 'power3.out'
       })
-      .fromTo('.cutting-item-line',
-        { scaleX: 0 },
-        { scaleX: 1, duration: 0.7, stagger: 0.08, ease: 'power3.out' },
-        '-=0.5'
-      );
+        .fromTo('.cutting-item-line',
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.7, stagger: 0.08, ease: 'power3.out' },
+          '-=0.5'
+        );
 
       // Mask reveal with inner parallax
       if (imgFrameRef.current) {
@@ -144,14 +144,14 @@ export const CuttingSection = () => {
           {/* Right: Large Photo with Mask Reveal, Tabbed Showcase and Inner Parallax */}
           {currentCut?.src && (
             <div className="discipline-photo-pane" ref={imgFrameRef}>
-              <div className="cutting-tab-bar" role="group" aria-label="Select Boys or Girls haircut craft">
+              <div className="cutting-tab-bar" role="group" aria-label="Select men's or women's haircuts">
                 <button
                   type="button"
                   aria-pressed={activeTab === 'boys'}
                   className={`cutting-tab-pill ${activeTab === 'boys' ? 'active' : ''}`}
                   onClick={() => handleTabChange('boys')}
                 >
-                  Boys Cut
+                  Men's Cut
                 </button>
                 <button
                   type="button"
@@ -159,7 +159,7 @@ export const CuttingSection = () => {
                   className={`cutting-tab-pill ${activeTab === 'girls' ? 'active' : ''}`}
                   onClick={() => handleTabChange('girls')}
                 >
-                  Girls Cut
+                  Women's Cut
                 </button>
               </div>
 
