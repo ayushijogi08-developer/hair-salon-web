@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Flip } from 'gsap/Flip';
 import { SplitText } from 'gsap/SplitText';
 import Lenis from 'lenis';
 import { Preloader } from './components/Preloader';
@@ -25,7 +24,7 @@ import { MobileStickyBar } from './components/MobileStickyBar';
 import { initMagnetic } from './lib/magnetic';
 
 // Register GSAP plugins
-gsap.registerPlugin(ScrollTrigger, Flip, SplitText);
+gsap.registerPlugin(ScrollTrigger, SplitText);
 ScrollTrigger.config({ ignoreMobileResize: true });
 
 export function App() {
@@ -57,9 +56,10 @@ export function App() {
       }
     });
 
-    gsap.ticker.add((time) => {
+    const tickerUpdate = (time) => {
       lenis.raf(time * 1000);
-    });
+    };
+    gsap.ticker.add(tickerUpdate);
 
     gsap.ticker.lagSmoothing(0);
 
@@ -82,6 +82,7 @@ export function App() {
     document.addEventListener('click', handleAnchorClick);
 
     return () => {
+      gsap.ticker.remove(tickerUpdate);
       document.removeEventListener('click', handleAnchorClick);
       lenis.destroy();
     };

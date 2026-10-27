@@ -77,7 +77,7 @@ export const BeforeAfter = () => {
   return (
     <section id="transformations" className="section" ref={sectionRef} aria-labelledby="ba-title">
       <div className="container">
-        <SectionEyebrowRow label="Transformations" num="09" />
+        <SectionEyebrowRow label="Transformations" />
         <div style={{ maxWidth: '640px', marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
           <h2 id="ba-title" style={{ marginBottom: '1rem' }}>
             Before & After

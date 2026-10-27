@@ -6,11 +6,14 @@ import { WordFillParagraph, SectionEyebrowRow } from '../components/MotionText';
 
 export const ServicesOverview = () => {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [prevIdx, setPrevIdx] = useState(0);
   const items = siteData.servicesOverview;
   const sectionRef = useRef(null);
   const slideRefs = useRef([]);
 
   const handleRowActivate = (idx) => {
+    if (idx === activeIdx) return;
+    setPrevIdx(activeIdx);   // keep the old photo underneath while the new one wipes in
     setActiveIdx(idx);
   };
 
@@ -19,7 +22,7 @@ export const ServicesOverview = () => {
     { src: siteData.images.cutting?.girlCut?.src || siteData.images.cutting?.src, alt: "Precision haircutting & styling" },
     { src: siteData.images.colour?.src, alt: "Bespoke hair colour consultation" },
     { src: siteData.images.treatments?.src, alt: "Restorative hair therapy" },
-    { src: siteData.images.academy?.src, alt: "Professional academy training studio" }
+    { src: siteData.images.academy?.src, alt: siteData.images.academy?.alt || "Hair City Academy educator demonstrating precision haircutting and styling techniques to students" }
   ];
 
   useLayoutEffect(() => {
@@ -30,7 +33,7 @@ export const ServicesOverview = () => {
       isMobile: '(max-width: 900px)',
       reduceMotion: '(prefers-reduced-motion: reduce)'
     }, (context) => {
-      const { reduceMotion, isDesktop, isMobile } = context.conditions;
+      const { reduceMotion, isMobile } = context.conditions;
 
       if (reduceMotion) {
         gsap.set('.service-overview-row, .service-row-thumb', { opacity: 1, clipPath: 'inset(0% 0% 0% 0%)' });
@@ -82,16 +85,7 @@ export const ServicesOverview = () => {
         });
       }
 
-      // Desktop pinned split layout: pin right image pane as list scrolls
-      if (isDesktop) {
-        ScrollTrigger.create({
-          trigger: '.services-split-grid',
-          start: 'top 15%',
-          end: 'bottom 85%',
-          pin: '.services-image-pane',
-          pinSpacing: false
-        });
-      }
+      // The image pane stays in view with CSS `position: sticky` (see .services-image-pane)
     });
 
     return () => mm.revert();
@@ -118,23 +112,10 @@ export const ServicesOverview = () => {
     };
   }, [activeIdx]);
 
-  // Smooth scroll handler for each visual index row
-  const handleScrollTo = (e, targetId) => {
-    e.preventDefault();
-    const el = document.getElementById(targetId);
-    if (el) {
-      if (window.lenis) {
-        window.lenis.scrollTo(el, { offset: -40, duration: 1.0 });
-      } else {
-        el.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  };
-
   return (
     <section id="services" className="section" ref={sectionRef} aria-labelledby="services-overview-title">
       <div className="container">
-        <SectionEyebrowRow label="Salon Offerings" num="01" />
+        <SectionEyebrowRow label="Salon Offerings" />
 
         <div className="services-split-grid">
           {/* Left: Visual Index with number, title, one line, small image, arrow */}
@@ -147,16 +128,14 @@ export const ServicesOverview = () => {
               Every service begins with honest consultation regarding face shape, base tone, and hair condition.
             </WordFillParagraph>
 
-            <div className="services-interactive-list" role="list">
+            <div className="services-interactive-list">
               {items.map((item, idx) => (
                 <a
                   key={item.num}
                   href={`#${item.targetId}`}
                   className={`service-overview-row ${activeIdx === idx ? 'active-row' : ''}`}
-                  onClick={(e) => handleScrollTo(e, item.targetId)}
                   onMouseEnter={() => handleRowActivate(idx)}
                   onFocus={() => handleRowActivate(idx)}
-                  aria-label={`Scroll to ${item.title}`}
                 >
                   <div className="service-row-leading">
                     <span className="service-row-num">{item.num}</span>
@@ -193,7 +172,10 @@ export const ServicesOverview = () => {
                   key={idx}
                   ref={(el) => { slideRefs.current[idx] = el; }}
                   className={`service-image-slide service-active-img-${idx} ${activeIdx === idx ? 'current' : ''}`}
-                  style={{ display: activeIdx === idx ? 'block' : 'none' }}
+                  style={{
+                    display: activeIdx === idx || prevIdx === idx ? 'block' : 'none',
+                    zIndex: activeIdx === idx ? 2 : 1
+                  }}
                 >
                   <img
                     src={img.src}
@@ -334,6 +316,7 @@ export const ServicesOverview = () => {
         .services-sticky-image-wrap {
           width: 100%;
           aspect-ratio: 4/5;
+          max-height: calc(100vh - var(--header-height) - 4rem);
           overflow: hidden;
           background: var(--color-surface);
           border: 1px solid var(--color-border);

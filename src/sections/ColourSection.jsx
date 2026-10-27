@@ -20,7 +20,7 @@ export const ColourSection = () => {
       const { reduceMotion, isDesktop } = context.conditions;
 
       if (reduceMotion) {
-        gsap.set('.colour-item-row, .colour-photo-frame, .colour-item-line', { opacity: 1, scaleX: 1 });
+        gsap.set('.colour-photo-frame', { opacity: 1 });
         return;
       }
 
@@ -109,12 +109,12 @@ export const ColourSection = () => {
             <div className="colour-process-header">
               <span className="colour-process-badge">Consultation First</span>
               <p className="colour-process-intro">
-                Three steps taken before any colour formulation touches your hair:
+                Our colour process, step by step:
               </p>
             </div>
 
             {/* Consultation-First 3-Step Process using strictly site.js copy */}
-            <div className="colour-process-list" role="list">
+            <div className="colour-process-list">
               <div className="colour-process-step">
                 <span className="colour-step-num">01</span>
                 <div className="colour-step-body">
@@ -153,7 +153,6 @@ export const ColourSection = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary"
-                aria-label="Ask about hair colour on WhatsApp"
               >
                 <span>Ask about colour</span>
                 <span className="btn-arrow">→</span>

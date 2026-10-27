@@ -25,7 +25,6 @@ export const MobileStickyBar = () => {
     <aside
       className={`mobile-bottom-bar ${showBar ? 'visible' : ''}`}
       aria-label="Quick Actions"
-      aria-hidden={!showBar}
     >
       <div className="mobile-bottom-bar-inner">
         <a

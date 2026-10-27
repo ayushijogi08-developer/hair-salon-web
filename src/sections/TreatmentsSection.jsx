@@ -134,7 +134,6 @@ export const TreatmentsSection = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary"
-                aria-label="Consult on hair treatments on WhatsApp"
               >
                 <span>Consult on treatments</span>
                 <span className="btn-arrow">→</span>

@@ -51,7 +51,7 @@ export const Team = () => {
   return (
     <section id="team" className="section" ref={sectionRef} aria-labelledby="team-title">
       <div className="container">
-        <SectionEyebrowRow label="The Artists" num="06" />
+        <SectionEyebrowRow label="The Artists" />
         <div style={{ maxWidth: '640px', marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
           <h2 id="team-title" style={{ marginBottom: '1rem' }}>
             Our Team

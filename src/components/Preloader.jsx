@@ -51,10 +51,10 @@ export const Preloader = ({ onComplete }) => {
       }, curtainDelay);
     }, preloaderRef.current);
 
-    // Safety timeout: under 1s on mobile, 1.6s on desktop
+    // Safety timeout: 1.3s on mobile, 2.2s on desktop
     const timer = setTimeout(() => {
       if (onComplete) onComplete();
-    }, isMobile ? 950 : 1600);
+    }, isMobile ? 1300 : 2200);
 
     return () => {
       clearTimeout(timer);

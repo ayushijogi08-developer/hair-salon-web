@@ -58,7 +58,7 @@ export const FAQ = () => {
     if (openIndex !== null && answerRefs.current[openIndex]) {
       gsap.to(answerRefs.current[openIndex], {
         height: 0,
-        opacity: 0,
+        autoAlpha: 0,
         duration: 0.35,
         ease: 'power2.inOut'
       });
@@ -69,10 +69,10 @@ export const FAQ = () => {
       const el = answerRefs.current[nextIndex];
       gsap.fromTo(
         el,
-        { height: 0, opacity: 0 },
+        { height: 0, autoAlpha: 0 },
         {
           height: 'auto',
-          opacity: 1,
+          autoAlpha: 1,
           duration: 0.35,
           ease: 'power2.inOut'
         }
@@ -102,7 +102,7 @@ export const FAQ = () => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
       <div className="container">
-        <SectionEyebrowRow label="Common Questions" num="08" />
+        <SectionEyebrowRow label="Common Questions" />
         <div style={{ maxWidth: '640px', marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
           <h2 id="faq-title" style={{ marginBottom: '1rem' }}>
             Frequently Asked Questions
@@ -112,7 +112,7 @@ export const FAQ = () => {
           </p>
         </div>
 
-        <div className="faq-accordion" role="region" aria-label="Frequently Asked Questions list">
+        <div className="faq-accordion">
           {confirmed.map((item, idx) => {
             const isOpen = openIndex === idx;
             const qId = `faq-q-${item.id || idx}`;
@@ -140,9 +140,9 @@ export const FAQ = () => {
                   aria-labelledby={qId}
                   className="faq-answer-panel"
                   style={{
-                    height: isOpen ? 'auto' : 0,
-                    opacity: isOpen ? 1 : 0,
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    height: 0,
+                    visibility: 'hidden'
                   }}
                 >
                   <div className="faq-answer-inner">

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { Flip } from 'gsap/Flip';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { siteData, whatsappFor } from '../data/site';
 import { WordFillParagraph, SectionEyebrowRow } from '../components/MotionText';
@@ -12,6 +11,7 @@ export const Work = () => {
   const trackRef = useRef(null);
   const cursorRef = useRef(null);
   const thumbnailRefs = useRef({});
+  const lightboxRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -67,7 +67,7 @@ export const Work = () => {
     };
   }, [lightboxOpen]);
 
-  // Keyboard navigation for lightbox
+  // Keyboard navigation for lightbox & Tab trap
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && activePhoto) {
@@ -80,6 +80,22 @@ export const Work = () => {
         const currentIdx = photos.findIndex(p => p.id === activePhoto.id);
         const prevIdx = (currentIdx - 1 + photos.length) % photos.length;
         setActivePhoto(photos[prevIdx]);
+      } else if (e.key === 'Tab' && activePhoto && lightboxRef.current) {
+        const focusables = lightboxRef.current.querySelectorAll(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusables.length) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -159,35 +175,6 @@ export const Work = () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUpOrLeave);
     };
-  }, []);
-
-  // Convert vertical mouse-wheel to sideways movement only while pointer is over gallery
-  // and only when it can still scroll in that direction; otherwise let page scroll
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-
-    const onWheel = (e) => {
-      if (!canHover()) return;
-      const delta = e.deltaY;
-      if (Math.abs(delta) < 4) return;
-
-      const maxScroll = el.scrollWidth - el.clientWidth;
-      const current = el.scrollLeft;
-
-      // Scrolling right (wheel down) and not at end
-      if (delta > 0 && current < maxScroll - 2) {
-        e.preventDefault();
-        el.scrollLeft += delta;
-      } else if (delta < 0 && current > 2) {
-        // Scrolling left (wheel up) and not at start
-        e.preventDefault();
-        el.scrollLeft += delta;
-      }
-    };
-
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
   // Floating "View" label that follows the pointer inside the gallery container
@@ -319,10 +306,6 @@ export const Work = () => {
       hasMovedRef.current = false;
       return; // Suppress open if user dragged
     }
-    const thumbEl = thumbnailRefs.current[item.id];
-    if (thumbEl) {
-      Flip.getState(thumbEl);
-    }
     setActivePhoto(item);
   };
 
@@ -336,7 +319,7 @@ export const Work = () => {
       </div>
 
       <div className="container">
-        <SectionEyebrowRow label="Selected Cuts & Colour" num="03" />
+        <SectionEyebrowRow label="Selected Cuts & Colour" />
 
         {/* Header with Counter, Category Filter and Navigation Controls */}
         <div className="work-header-row">
@@ -441,7 +424,7 @@ export const Work = () => {
                   openLightbox(item);
                 }
               }}
-              aria-label={`View photo 0${idx + 1}: ${item.title} — ${item.alt}`}
+              aria-label={item.title}
             >
               <div className="work-photo-frame">
                 <img
@@ -457,7 +440,7 @@ export const Work = () => {
                 <div className="work-card-overlay">
                   <div className="work-card-meta">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                      <span className="work-num-label">{item.label}</span>
+                      <span className="work-num-label">{String(idx + 1).padStart(2, '0')}</span>
                       <span className="work-category-badge">{item.categoryLabel}</span>
                     </div>
                     <h3 className="work-card-title">{item.title}</h3>
@@ -494,6 +477,7 @@ export const Work = () => {
           aria-label={activePhoto.title || activePhoto.alt}
         >
           <div
+            ref={lightboxRef}
             className="lightbox-content"
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => {

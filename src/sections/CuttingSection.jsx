@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { siteData, whatsappFor } from '../data/site';
 import { WordFillParagraph, SectionEyebrowRow } from '../components/MotionText';
@@ -10,20 +10,29 @@ export const CuttingSection = () => {
   const [activeTab, setActiveTab] = useState('boys');
   const sectionRef = useRef(null);
   const imgFrameRef = useRef(null);
+  const innerImgRef = useRef(null);
+  const isFirstRender = useRef(true);
 
   const currentCut = activeTab === 'boys' ? boyCut : girlCut;
+  const inactiveCut = activeTab === 'boys' ? girlCut : boyCut;
 
   const handleTabChange = (tab) => {
     if (tab === activeTab) return;
     setActiveTab(tab);
-    const img = document.querySelector('.cutting-inner-img');
-    if (img) {
-      gsap.fromTo(img,
+  };
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (innerImgRef.current) {
+      gsap.fromTo(innerImgRef.current,
         { opacity: 0.4, scale: 1.05 },
         { opacity: 1, scale: 1, duration: 0.45, ease: 'power2.out' }
       );
     }
-  };
+  }, [activeTab]);
 
   useLayoutEffect(() => {
     const mm = gsap.matchMedia(sectionRef.current);
@@ -83,7 +92,7 @@ export const CuttingSection = () => {
           }
         );
 
-        gsap.to('.cutting-inner-img', {
+        gsap.to('.cutting-photo-frame', {
           yPercent: isDesktop ? -8 : -4,
           ease: 'none',
           scrollTrigger: {
@@ -133,7 +142,6 @@ export const CuttingSection = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-secondary"
-                aria-label="Book a haircut appointment on WhatsApp"
               >
                 <span>Book a cut</span>
                 <span className="btn-arrow">→</span>
@@ -166,14 +174,25 @@ export const CuttingSection = () => {
               <div className="cutting-photo-frame">
                 <img
                   key={activeTab}
+                  ref={innerImgRef}
                   src={currentCut.src}
                   alt={currentCut.alt}
                   width="800"
                   height="1000"
                   className="discipline-photo-img cutting-inner-img"
-                  loading="lazy"
+                  loading="eager"
                   decoding="async"
                 />
+                {inactiveCut?.src && (
+                  <img
+                    src={inactiveCut.src}
+                    alt=""
+                    aria-hidden="true"
+                    style={{ display: 'none' }}
+                    loading="eager"
+                    decoding="async"
+                  />
+                )}
                 <div className="cutting-photo-caption">
                   <span>{currentCut.title}</span>
                 </div>

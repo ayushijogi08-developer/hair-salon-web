@@ -19,12 +19,24 @@ export const Marquee = () => {
       let currentVelocity = 1;
       let skewTarget = 0;
       let currentSkew = 0;
+      let isVisible = false;
 
-      // Observe scroll velocity and direction to adjust speed, direction, and slight skew
+      let halfWidth = trackRef.current ? trackRef.current.scrollWidth / 2 : 0;
+      const updateHalfWidth = () => {
+        if (trackRef.current) {
+          halfWidth = trackRef.current.scrollWidth / 2;
+        }
+      };
+      window.addEventListener('resize', updateHalfWidth);
+
+      // Observe scroll velocity and direction to adjust speed, direction, and slight skew; skip ticker work when offscreen
       ScrollTrigger.create({
         trigger: marqueeRef.current,
         start: 'top bottom',
         end: 'bottom top',
+        onToggle: (self) => {
+          isVisible = self.isActive;
+        },
         onUpdate: (self) => {
           const velocity = self.getVelocity();
           const speedMultiplier = Math.min(Math.abs(velocity) / 300, 4);
@@ -35,23 +47,22 @@ export const Marquee = () => {
       });
 
       const tickerFunc = () => {
+        if (!isVisible) return;
+
         // Smoothly interpolate current velocity and skew
         currentVelocity += (targetVelocity - currentVelocity) * 0.08;
         currentSkew += (skewTarget - currentSkew) * 0.08;
         skewTarget *= 0.94; // Decay skew back to 0
 
         // Move marquee at calm, quiet divider pace
-        currentX -= currentVelocity * 0.42;
+        currentX -= currentVelocity * 0.42 * gsap.ticker.deltaRatio();
 
         // Seamless wrap around half width
-        if (trackRef.current) {
-          const halfWidth = trackRef.current.scrollWidth / 2;
-          if (halfWidth > 0) {
-            if (currentX <= -halfWidth) {
-              currentX += halfWidth;
-            } else if (currentX >= 0) {
-              currentX -= halfWidth;
-            }
+        if (trackRef.current && halfWidth > 0) {
+          if (currentX <= -halfWidth) {
+            currentX += halfWidth;
+          } else if (currentX >= 0) {
+            currentX -= halfWidth;
           }
 
           trackRef.current.style.transform = `translate3d(${currentX}px, 0, 0) skewX(${currentSkew}deg)`;
@@ -62,6 +73,7 @@ export const Marquee = () => {
 
       return () => {
         gsap.ticker.remove(tickerFunc);
+        window.removeEventListener('resize', updateHalfWidth);
       };
     }, marqueeRef.current);
 

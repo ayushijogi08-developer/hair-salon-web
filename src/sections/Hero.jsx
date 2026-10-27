@@ -163,7 +163,7 @@ export const Hero = () => {
         <div className="hero-grid">
           {/* Top Left: Headline, Sub, and CTAs */}
           <div className="hero-copy-block">
-            <h1 id="hero-title" className="hero-h1" tabIndex="0">
+            <h1 id="hero-title" className="hero-h1">
               <span className="hero-title-line">Where Akola gets</span>
               <span className="hero-title-line">its hair done,</span>
               <span className="hero-title-line">
@@ -179,50 +179,6 @@ export const Hero = () => {
             <p className="hero-sub hero-meta-fade">
               {heroData.sub}
             </p>
-
-            {/* CTAs: Primary WhatsApp + Secondary Academy (52px height) */}
-            <div className="hero-actions-row hero-meta-fade">
-              <a
-                href={siteData.links.whatsappGeneral}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-primary hero-btn"
-                aria-label="Book a consultation on WhatsApp"
-              >
-                <span>{heroData.ctaPrimary}</span>
-                <span className="btn-arrow" aria-hidden="true">→</span>
-              </a>
-
-              <a
-                href="#academy"
-                className="btn btn-secondary hero-btn"
-                aria-label="Explore the academy"
-              >
-                <span>{heroData.ctaSecondary}</span>
-                <span className="btn-arrow" aria-hidden="true">↓</span>
-              </a>
-            </div>
-
-            {/* Optional Social Proof Line: rendered ONLY when real owner data with confirmed: true is supplied */}
-            {heroData.proof?.confirmed && (
-              <a
-                href={siteData.links.googleMaps}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hero-social-proof hero-meta-fade"
-                aria-label={`${heroData.proof.rating} out of 5 stars from ${heroData.proof.count} Google reviews`}
-              >
-                <span className="hero-proof-stars" aria-hidden="true">
-                  {[...Array(5)].map((_, i) => (
-                    <svg key={i} viewBox="0 0 20 20" className="hero-star-icon" fill="currentColor">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </span>
-                <span className="hero-proof-rating">{heroData.proof.rating}</span>
-                <span className="hero-proof-text">from {heroData.proof.count} Google reviews</span>
-              </a>
-            )}
           </div>
 
           {/* Right Column (or Middle on Tablet/Mobile): Composed Two Matching Arches */}
@@ -232,8 +188,8 @@ export const Hero = () => {
                 <img
                   src={heroImg.src}
                   alt={heroImg.alt}
-                  width="600"
-                  height="840"
+                  width="400"
+                  height="600"
                   className="hero-arch-img hero-arch-img-women"
                   loading="eager"
                   fetchPriority="high"
@@ -251,8 +207,8 @@ export const Hero = () => {
                 <img
                   src={secondaryImg.src}
                   alt={secondaryImg.alt}
-                  width="500"
-                  height="667"
+                  width="447"
+                  height="447"
                   className="hero-arch-img hero-arch-img-men"
                   loading="eager"
                   decoding="async"
@@ -264,28 +220,71 @@ export const Hero = () => {
               </div>
             </div>
 
-            {/* Decorative Rotating Seal placed on seam at lower third (never covering face) */}
+            {/* Hair City Circular Seal Logo Badge: rotating outer text ring + stationary center HC monogram */}
             <div className="hero-seal-badge" aria-hidden="true">
-              <svg viewBox="0 0 120 120" className="hero-seal-svg">
-                <path
-                  id="hero-seal-circle-path"
-                  d="M 60,60 m -43,0 a 43,43 0 1,1 86,0 a 43,43 0 1,1 -86,0"
-                  fill="none"
-                />
-                <text
-                  fontFamily="var(--font-sans)"
-                  fontSize="8.4"
-                  fontWeight="600"
-                  letterSpacing="0.22em"
-                  fill="var(--color-text)"
-                >
-                  <textPath href="#hero-seal-circle-path" startOffset="0%">
-                    SALON · ACADEMY · AKOLA · HAIR STUDIO ·
-                  </textPath>
-                </text>
-              </svg>
-              <span className="hero-seal-center">HC</span>
+              <img
+                src="/hair-city-seal-outer.webp"
+                alt=""
+                className="hero-seal-outer"
+                width="108"
+                height="108"
+                loading="eager"
+                decoding="async"
+              />
+              <img
+                src="/hair-city-seal-center.webp"
+                alt="Hair City Salon & Academy Logo"
+                className="hero-seal-center-img"
+                width="64"
+                height="64"
+                loading="eager"
+                decoding="async"
+              />
             </div>
+          </div>
+
+          {/* CTAs: Primary WhatsApp + Secondary Academy (52px height) - Positioned below images on mobile */}
+          <div className="hero-actions-block hero-meta-fade">
+            <div className="hero-actions-row">
+              <a
+                href={siteData.links.whatsappGeneral}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary hero-btn"
+              >
+                <span>{heroData.ctaPrimary}</span>
+                <span className="btn-arrow" aria-hidden="true">→</span>
+              </a>
+
+              <a
+                href="#academy"
+                className="btn btn-secondary hero-btn"
+              >
+                <span>{heroData.ctaSecondary}</span>
+                <span className="btn-arrow" aria-hidden="true">↓</span>
+              </a>
+            </div>
+
+            {/* Optional Social Proof Line: rendered ONLY when real owner data with confirmed: true is supplied */}
+            {heroData.proof?.confirmed && (
+              <a
+                href={siteData.links.googleMaps}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hero-social-proof"
+                aria-label={`${heroData.proof.rating} out of 5 stars from ${heroData.proof.count} Google reviews`}
+              >
+                <span className="hero-proof-stars" aria-hidden="true">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} viewBox="0 0 20 20" className="hero-star-icon" fill="currentColor">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </span>
+                <span className="hero-proof-rating">{heroData.proof.rating}</span>
+                <span className="hero-proof-text">from {heroData.proof.count} Google reviews</span>
+              </a>
+            )}
           </div>
 
           {/* Bottom Left (or Bottom on Tablet/Mobile): Info Strip separated by single hairline */}
@@ -357,18 +356,23 @@ export const Hero = () => {
         .hero-grid {
           display: grid;
           grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-          grid-template-rows: auto auto;
+          grid-template-rows: auto auto auto;
           grid-template-areas:
             "copy   visual"
+            "actions visual"
             "strip  visual";
           column-gap: clamp(1.5rem, 3vw, 3rem);
           align-items: center;
         }
 
-       
-
         .hero-copy-block {
           grid-area: copy;
+          max-width: 660px;
+          width: 100%;
+        }
+
+        .hero-actions-block {
+          grid-area: actions;
           max-width: 660px;
           width: 100%;
         }
@@ -600,41 +604,46 @@ transform: none;
           white-space: nowrap;
         }
 
-        /* Rotating Seal on Seam at lower third */
+        /* Circular Hair City Seal Logo Badge */
         .hero-seal-badge {
           position: absolute;
           left: calc(56% - 8px);
           top: 65%;
           transform: translate(-50%, -50%);
-          width: 92px;
-          height: 92px;
+          width: 108px;
+          height: 108px;
           border-radius: 50%;
-          background: var(--color-bg);
-          border: 1px solid var(--color-border);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 5;
           pointer-events: none;
-          box-shadow: 0 6px 20px rgba(25, 22, 20, 0.06);
+          filter: drop-shadow(0 6px 18px rgba(25, 22, 20, 0.14));
+          transition: transform 0.3s ease;
         }
 
-        .hero-seal-svg {
+        .hero-seal-outer {
+          position: absolute;
+          inset: 0;
           width: 100%;
           height: 100%;
-          animation: heroSealRotate 28s linear infinite;
+          border-radius: 50%;
+          animation: heroSealRotate 24s linear infinite;
           transform-origin: center center;
           will-change: transform;
+          display: block;
         }
 
-        .hero-seal-center {
+        .hero-seal-center-img {
           position: absolute;
-          font-family: var(--font-serif);
-          font-style: italic;
-          font-size: 1.25rem;
-          color: var(--color-accent);
-          line-height: 1;
-          user-select: none;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 59%;
+          height: 59%;
+          border-radius: 50%;
+          object-fit: contain;
+          display: block;
         }
 
         @keyframes heroSealRotate {
@@ -835,17 +844,13 @@ transform: none;
 
           .hero-sub {
             max-width: 52ch;
-            margin-bottom: 1.75rem;
-          }
-
-          .hero-actions-row {
             margin-bottom: 0;
           }
 
           .hero-visual-block {
             order: 2;
             max-width: 540px;
-            margin: clamp(2.5rem, 5vh, 3.5rem) auto;
+            margin: clamp(2rem, 4vh, 3rem) auto clamp(1.5rem, 3vh, 2.5rem);
             align-self: center;
           }
 
@@ -857,8 +862,20 @@ transform: none;
             top: 64%;
           }
 
-          .hero-info-strip {
+          .hero-actions-block {
             order: 3;
+            max-width: 100%;
+            margin-bottom: clamp(2rem, 4vh, 3rem);
+          }
+
+          .hero-actions-row {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+          }
+
+          .hero-info-strip {
+            order: 4;
             max-width: 100%;
             margin-top: 0;
             padding-top: 1.75rem;
@@ -892,35 +909,21 @@ transform: none;
             line-height: 1.08;
             letter-spacing: -0.015em;
             text-wrap: balance;
-            margin-bottom: 1.15rem;
+            margin-bottom: 1rem;
           }
 
           .hero-sub {
             font-size: 1rem;
             line-height: 1.5;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.25rem;
           }
 
-          .hero-actions-row {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            width: 100%;
-          }
-
-          .hero-actions-row .hero-btn {
-            width: 100%;
-            height: 48px;
-            min-height: 48px;
-            justify-content: center;
-          }
-
-          /* Two-arch visual smaller side-by-side, staggered ~8% */
+          /* Two-arch visual smaller side-by-side, placed directly under subtitle */
           .hero-visual-block {
             order: 2;
             width: 100%;
             max-width: 360px;
-            margin: 2.25rem auto 2rem;
+            margin: 1.25rem auto 1.5rem;
             align-self: center;
             gap: 12px;
           }
@@ -937,23 +940,40 @@ transform: none;
           }
 
           .hero-seal-badge {
-            width: 72px;
-            height: 72px;
+            width: 82px;
+            height: 82px;
             left: calc(56% - 6px);
             top: 60%;
-          }
-
-          .hero-seal-center {
-            font-size: 1.05rem;
           }
 
           .hero-caption-text {
             font-size: 11px;
           }
 
+          /* Action buttons placed directly below the images */
+          .hero-actions-block {
+            order: 3;
+            width: 100%;
+            margin-bottom: 1.75rem;
+          }
+
+          .hero-actions-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+          }
+
+          .hero-actions-row .hero-btn {
+            width: 100%;
+            height: 48px;
+            min-height: 48px;
+            justify-content: center;
+          }
+
           /* Info strip single column with row hairlines */
           .hero-info-strip {
-            order: 3;
+            order: 4;
             max-width: 100%;
             margin-top: 0;
             padding-top: 0;

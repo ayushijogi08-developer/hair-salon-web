@@ -13,11 +13,11 @@ export const WordFillParagraph = ({ children, className = '', style = {} }) => {
 
     let split = null;
     const ctx = gsap.context(() => {
-      split = new SplitText(pRef.current, { type: 'words' });
+      split = new SplitText(pRef.current, { type: 'words', aria: 'none' });
 
-      // Words go from 35% to 100% opacity as you scroll
+      // Words go from 85% to 100% opacity as you scroll
       gsap.fromTo(split.words,
-        { opacity: 0.7 },
+        { opacity: 0.85 },
         {
           opacity: 1,
           stagger: 0.05,
@@ -46,42 +46,10 @@ export const WordFillParagraph = ({ children, className = '', style = {} }) => {
 };
 
 export const SectionEyebrowRow = ({ label, num }) => {
-  const numRef = useRef(null);
-  const rowRef = useRef(null);
-
-  useLayoutEffect(() => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
-
-    const targetNum = parseInt(num, 10);
-    if (isNaN(targetNum)) return;
-
-    const ctx = gsap.context(() => {
-      const counter = { val: 0 };
-      gsap.to(counter, {
-        val: targetNum,
-        duration: 1.1,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: rowRef.current,
-          start: 'top 90%',
-          once: true
-        },
-        onUpdate: () => {
-          if (numRef.current) {
-            numRef.current.textContent = String(Math.floor(counter.val)).padStart(2, '0');
-          }
-        }
-      });
-    }, rowRef.current);
-
-    return () => ctx.revert();
-  }, [num]);
-
   return (
-    <div className="section-eyebrow-row" ref={rowRef}>
+    <div className="section-eyebrow-row">
       <span className="section-label" style={{ marginBottom: 0 }}>{label}</span>
-      {num ? <span className="section-oversized-num" ref={numRef}>{num}</span> : null}
+      {num ? <span className="section-oversized-num">{num}</span> : null}
     </div>
   );
 };

@@ -51,7 +51,7 @@ export const Reviews = () => {
   return (
     <section id="reviews" className="section" ref={sectionRef} aria-labelledby="reviews-title">
       <div className="container">
-        <SectionEyebrowRow label="Word of Mouth" num="07" />
+        <SectionEyebrowRow label="Word of Mouth" />
         <div style={{ maxWidth: '640px', marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
           <h2 id="reviews-title" style={{ marginBottom: '1rem' }}>
             Client Words

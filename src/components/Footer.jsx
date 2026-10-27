@@ -99,7 +99,7 @@ export const Footer = () => {
           <div
             ref={wordmarkRef}
             className="footer-giant-wordmark"
-            aria-label="Hair City"
+            aria-hidden="true"
             style={{
               fontFamily: 'var(--font-serif)',
               fontSize: 'clamp(3.5rem, 15vw, 13rem)',

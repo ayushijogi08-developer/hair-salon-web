@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import gsap from 'gsap';
 import { siteData } from '../data/site';
 import { canHover } from '../lib/motion';
@@ -45,12 +46,14 @@ export const Header = () => {
         prevFocusedRef.current = null;
       }
       document.body.style.overflow = '';
+      window.lenis?.start();
       return;
     }
 
     // Menu opened
     prevFocusedRef.current = document.activeElement;
     document.body.style.overflow = 'hidden';
+    window.lenis?.stop();
 
     // Move focus into drawer
     const focusTimer = setTimeout(() => {
@@ -87,6 +90,7 @@ export const Header = () => {
     return () => {
       clearTimeout(focusTimer);
       window.removeEventListener('keydown', handleKeyDown);
+      window.lenis?.start();
     };
   }, [menuOpen]);
 
@@ -124,10 +128,32 @@ export const Header = () => {
     };
   }, []);
 
+  const handleNavClick = (e, href) => {
+    e.preventDefault();
+    setMenuOpen(false);
+    document.body.style.overflow = '';
+    window.lenis?.start();
+
+    const targetEl = document.querySelector(href);
+    if (!targetEl) return;
+
+    requestAnimationFrame(() => {
+      if (window.lenis) {
+        window.lenis.scrollTo(targetEl, {
+          offset: -72,
+          duration: 1.2
+        });
+      } else {
+        targetEl.scrollIntoView({ behavior: 'smooth' });
+      }
+      window.history.pushState(null, '', href);
+    });
+  };
+
   return (
-    <header className={`site-header ${headerVisible ? 'header-shown' : 'header-hidden'}`} role="banner">
+    <header className={`site-header ${headerVisible ? 'header-shown' : 'header-hidden'}`}>
       <div className="container header-inner">
-        <a href="#hero" className="brand-title" aria-label="Hair City Salon & Academy Home">
+        <a href="#hero" className="brand-title">
           <span>Hair City</span>
           <span className="brand-subtitle">Salon & Academy · Akola</span>
         </a>
@@ -180,8 +206,8 @@ export const Header = () => {
         </div>
       </div>
 
-      {/* Full-Screen Accessible Mobile Drawer */}
-      {menuOpen && (
+      {/* Full-Screen Accessible Mobile Drawer portaled to document.body */}
+      {menuOpen && typeof document !== 'undefined' && createPortal(
         <div className="mobile-drawer-overlay" onClick={() => setMenuOpen(false)}>
           <div
             ref={drawerRef}
@@ -193,29 +219,64 @@ export const Header = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span className="brand-title">Hair City</span>
+              <div className="mobile-drawer-header">
+                <a
+                  href="#hero"
+                  className="brand-title"
+                  onClick={(e) => handleNavClick(e, '#hero')}
+                  aria-label="Hair City Home"
+                >
+                  <span>Hair City</span>
+                  <span className="brand-subtitle">Salon & Academy · Akola</span>
+                </a>
                 <button
                   ref={closeBtnRef}
                   type="button"
-                  className="mobile-drawer-close"
+                  className="mobile-nav-toggle mobile-drawer-close"
                   onClick={() => setMenuOpen(false)}
                   aria-label="Close menu"
                 >
-                  ✕
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
                 </button>
               </div>
 
               <nav className="mobile-drawer-nav">
-                <a href="#services" className="mobile-drawer-link" onClick={() => setMenuOpen(false)}>Salon</a>
-                <a href="#academy" className="mobile-drawer-link" onClick={() => setMenuOpen(false)}>Academy</a>
-                <a href="#work" className="mobile-drawer-link" onClick={() => setMenuOpen(false)}>Work</a>
-                <a href="#visit" className="mobile-drawer-link" onClick={() => setMenuOpen(false)}>Visit</a>
+                <a
+                  href="#services"
+                  className="mobile-drawer-link"
+                  onClick={(e) => handleNavClick(e, '#services')}
+                >
+                  Salon
+                </a>
+                <a
+                  href="#academy"
+                  className="mobile-drawer-link"
+                  onClick={(e) => handleNavClick(e, '#academy')}
+                >
+                  Academy
+                </a>
+                <a
+                  href="#work"
+                  className="mobile-drawer-link"
+                  onClick={(e) => handleNavClick(e, '#work')}
+                >
+                  Work
+                </a>
+                <a
+                  href="#visit"
+                  className="mobile-drawer-link"
+                  onClick={(e) => handleNavClick(e, '#visit')}
+                >
+                  Visit
+                </a>
               </nav>
             </div>
 
-            <div style={{ paddingTop: '2rem', borderTop: '1px solid var(--color-border)' }}>
-              <p style={{ fontSize: '0.8125rem', marginBottom: '1.25rem', color: 'var(--color-muted)' }}>
+            <div className="mobile-drawer-footer">
+              <p style={{ fontSize: '0.8125rem', marginBottom: '1rem', color: 'var(--color-muted)' }}>
                 {siteData.hours.days}: {siteData.hours.time}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -238,7 +299,8 @@ export const Header = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );

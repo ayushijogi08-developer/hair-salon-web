@@ -169,7 +169,7 @@ export const siteData = {
 
   // --- ACADEMY (FULL SECTION) ---
   academy: {
-    num: "02",
+    num: "",
     eyebrow: "Professional Hair Education",
     headline: "Learn hair the way it is done in a working salon.",
     intro: "The academy trains beginners and aspiring stylists in the practical skills of the trade, in the same space where clients are served.",
@@ -241,7 +241,7 @@ export const siteData = {
     },
     academy: {
       src: resolveImage('academy.jpg', 'boy-cut-03.jpg'),
-      alt: "Hair City Academy student hands-on barbering and haircut styling training"
+      alt: "Hair City Academy educator demonstrating precision haircutting and styling techniques to students"
     },
     work: [
       {
@@ -367,15 +367,33 @@ export const siteData = {
 
   faq: [
     {
-      id: "f1",
-      question: "Do I need an appointment?",
-      answer: "Walk-ins are welcome, but booking on WhatsApp guarantees your preferred time.",
+      id: "faq-01",
+      question: "Do I need to book an appointment before visiting?",
+      answer: "Walk-ins are warmly welcomed throughout our working hours (9:00 AM – 10:00 PM). However, for elaborate services like hair colour, smoothening, or peak evening hours, booking via WhatsApp ensures dedicated chair time.",
       confirmed: true
     },
     {
-      id: "f2",
+      id: "faq-hours",
       question: "Which days are you open?",
       answer: "Every day, 9:00 AM to 10:00 PM.",
+      confirmed: true
+    },
+    {
+      id: "faq-02",
+      question: "How long does a hair colour or balayage service take?",
+      answer: "Standard root touch-ups take approximately 60–90 minutes. Complex lightening, highlights, and custom balayage work typically require 3 to 4.5 hours depending on initial hair thickness, base tone, and desired lift.",
+      confirmed: true
+    },
+    {
+      id: "faq-03",
+      question: "What aftercare is required after smoothening or nanoplasty?",
+      answer: "We recommend using sulfate-free cleansing care, avoiding tight hair ties for the first 48 hours, and scheduling a periodic restorative spa treatment to preserve shine and tensile strength.",
+      confirmed: true
+    },
+    {
+      id: "faq-04",
+      question: "How are academy admissions structured and when do new batches start?",
+      answer: "Academy batches run in small cohorts of 4 to 6 students to ensure one-on-one chair instruction. New cohorts start on the first Monday of each month. Contact our coordinator via WhatsApp for syllabus breakdowns and enrollment.",
       confirmed: true
     }
   ],
@@ -385,7 +403,7 @@ export const siteData = {
     feeRange: "Shared on enquiry",
     nextBatch: "1st of every month",
     certificate: "Certificate on completion",
-    confirmed: true
+    confirmed: false
   },
   /* Example format when confirmed:
   academyDetails: {

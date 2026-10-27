@@ -51,7 +51,7 @@ export const Pricing = () => {
   return (
     <section id="pricing" className="section" ref={sectionRef} aria-labelledby="pricing-title">
       <div className="container">
-        <SectionEyebrowRow label="Menu & Rates" num="05" />
+        <SectionEyebrowRow label="Menu & Rates" />
         <div style={{ maxWidth: '640px', marginBottom: 'clamp(2.5rem, 5vw, 4rem)' }}>
           <h2 id="pricing-title" style={{ marginBottom: '1rem' }}>
             Service Pricing

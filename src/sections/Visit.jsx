@@ -225,7 +225,14 @@ export const Visit = () => {
         <div className="visit-map-container">
           <div
             className={`map-activation-layer ${mapActive ? 'active' : ''}`}
+            tabIndex={0}
             onClick={() => setMapActive(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setMapActive(true);
+              }
+            }}
             onMouseLeave={() => setMapActive(false)}
             role="region"
             aria-label="Interactive map"
@@ -234,15 +241,6 @@ export const Visit = () => {
             <div className="map-fallback-layer" aria-hidden="true">
               <span className="map-fallback-title">Hair City Salon & Academy</span>
               <p className="map-fallback-address">{siteData.address.line1}, {siteData.address.line2}, {siteData.address.city}</p>
-              <a
-                href={siteData.links.googleMaps}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-secondary"
-                style={{ marginTop: '0.75rem' }}
-              >
-                View on Google Maps →
-              </a>
             </div>
 
             {!mapActive && (
@@ -346,17 +344,6 @@ export const Visit = () => {
           margin: 0;
           font-size: 0.8125rem;
           color: var(--color-muted);
-        }
-          
-        .editorial-label {
-          display: block;
-          font-size: var(--size-micro);
-          text-transform: uppercase;
-          letter-spacing: 0.14em;
-          color: var(--color-muted);
-          margin-bottom: 1.5rem;
-          padding-bottom: 0.75rem;
-          border-bottom: 1px solid var(--color-border-light);
         }
 
         .visit-highlight {

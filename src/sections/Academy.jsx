@@ -22,6 +22,7 @@ export const Academy = () => {
   // References for step state and animating
   const currentIndexRef = useRef(0);
   const isTransitioningRef = useRef(false);
+  const isScrollingRef = useRef(false);
   const goToRef = useRef(null);
   const scrollTriggerInstanceRef = useRef(null);
 
@@ -77,284 +78,213 @@ export const Academy = () => {
       const cards = gsap.utils.toArray('.academy-step-card');
       const numSteps = data.modules.length;
 
-      if (isDesktop || isMobile) {
-        let activeTimeline = null;
+      let activeTimeline = null;
 
-        // Reset a card and all its child elements to a complete, visible resting state
-        const setCardRestingState = (card) => {
-          gsap.killTweensOf(card);
-          gsap.killTweensOf(card.querySelectorAll('*'));
-          gsap.set(card, {
-            autoAlpha: 1,
-            opacity: 1,
-            y: 0,
-            visibility: 'visible',
-            zIndex: 2,
-            pointerEvents: 'auto',
-            clearProps: 'transform'
-          });
+      // Reset a card and all its child elements to a complete, visible resting state
+      const setCardRestingState = (card) => {
+        gsap.killTweensOf(card);
+        gsap.killTweensOf(card.querySelectorAll('*'));
+        gsap.set(card, {
+          autoAlpha: 1,
+          opacity: 1,
+          y: 0,
+          visibility: 'visible',
+          zIndex: 2,
+          pointerEvents: 'auto',
+          clearProps: 'transform'
+        });
 
-          const pNum = card.querySelector('.step-anim-phase-num');
-          const t = card.querySelector('.step-anim-title');
-          const d = card.querySelector('.step-anim-desc');
-          const dt = card.querySelector('.step-anim-detail');
-          const al = card.querySelector('.step-anim-accent-line');
-          const ch = card.querySelectorAll('.step-anim-chip');
-          const bg = card.querySelector('.step-parallax-num');
+        const pNum = card.querySelector('.step-anim-phase-num');
+        const t = card.querySelector('.step-anim-title');
+        const d = card.querySelector('.step-anim-desc');
+        const dt = card.querySelector('.step-anim-detail');
+        const al = card.querySelector('.step-anim-accent-line');
+        const ch = card.querySelectorAll('.step-anim-chip');
+        const bg = card.querySelector('.step-parallax-num');
 
-          if (pNum) gsap.set(pNum, { yPercent: 0, y: 0, opacity: 1, clearProps: 'transform' });
-          if (t) gsap.set(t, { yPercent: 0, y: 0, opacity: 1, clearProps: 'transform' });
-          if (d) gsap.set(d, { y: 0, yPercent: 0, opacity: 1, clearProps: 'transform' });
-          if (dt) gsap.set(dt, { y: 0, yPercent: 0, opacity: 1, clearProps: 'transform' });
-          if (al) gsap.set(al, { scaleY: 1, clearProps: 'transform' });
-          if (ch && ch.length) gsap.set(ch, { opacity: 1, y: 0, yPercent: 0, clearProps: 'transform' });
-          if (bg) gsap.set(bg, { y: 0, opacity: 0.12, clearProps: 'transform' });
-        };
+        if (pNum) gsap.set(pNum, { yPercent: 0, y: 0, opacity: 1, clearProps: 'transform' });
+        if (t) gsap.set(t, { yPercent: 0, y: 0, opacity: 1, clearProps: 'transform' });
+        if (d) gsap.set(d, { y: 0, yPercent: 0, opacity: 1, clearProps: 'transform' });
+        if (dt) gsap.set(dt, { y: 0, yPercent: 0, opacity: 1, clearProps: 'transform' });
+        if (al) gsap.set(al, { scaleY: 1, clearProps: 'transform' });
+        if (ch && ch.length) gsap.set(ch, { opacity: 1, y: 0, yPercent: 0, clearProps: 'transform' });
+        if (bg) gsap.set(bg, { y: 0, opacity: 0.12, clearProps: 'transform' });
+      };
 
-        // Fully hide a card
-        const setCardHiddenState = (card) => {
-          gsap.killTweensOf(card);
-          gsap.killTweensOf(card.querySelectorAll('*'));
-          gsap.set(card, {
-            autoAlpha: 0,
-            opacity: 0,
-            y: 0,
-            visibility: 'hidden',
-            zIndex: 1,
-            pointerEvents: 'none'
-          });
-        };
+      // Fully hide a card
+      const setCardHiddenState = (card) => {
+        gsap.killTweensOf(card);
+        gsap.killTweensOf(card.querySelectorAll('*'));
+        gsap.set(card, {
+          autoAlpha: 0,
+          opacity: 0,
+          y: 0,
+          visibility: 'hidden',
+          zIndex: 1,
+          pointerEvents: 'none'
+        });
+      };
 
-        // Clean Initial Setup for All Cards
+      // Clean Initial Setup for All Cards
+      cards.forEach((card, idx) => {
+        if (idx === currentIndexRef.current) {
+          setCardRestingState(card);
+        } else {
+          setCardHiddenState(card);
+        }
+      });
+
+      // Instant snap to target index for jumps > 1 step or re-entering section
+      const snapTo = (targetIndex) => {
+        if (activeTimeline) {
+          activeTimeline.kill();
+          activeTimeline = null;
+        }
+
         cards.forEach((card, idx) => {
-          if (idx === currentIndexRef.current) {
+          if (idx === targetIndex) {
             setCardRestingState(card);
           } else {
             setCardHiddenState(card);
           }
         });
 
-        // Instant snap to target index for jumps > 1 step or re-entering section
-        const snapTo = (targetIndex) => {
-          if (activeTimeline) {
-            activeTimeline.kill();
-            activeTimeline = null;
-          }
+        currentIndexRef.current = targetIndex;
+        setActiveIndex(targetIndex);
+        isTransitioningRef.current = false;
+      };
 
-          cards.forEach((card, idx) => {
-            if (idx === targetIndex) {
-              setCardRestingState(card);
-            } else {
-              setCardHiddenState(card);
-            }
-          });
+      const goTo = (targetIndex) => {
+        if (targetIndex < 0 || targetIndex >= numSteps) return;
+        if (targetIndex === currentIndexRef.current && !activeTimeline) return;
 
-          currentIndexRef.current = targetIndex;
-          setActiveIndex(targetIndex);
-          isTransitioningRef.current = false;
-        };
+        const fromIndex = currentIndexRef.current;
+        const diff = Math.abs(targetIndex - fromIndex);
 
-        const goTo = (targetIndex) => {
-          if (targetIndex < 0 || targetIndex >= numSteps) return;
-          if (targetIndex === currentIndexRef.current && !activeTimeline) return;
-
-          const fromIndex = currentIndexRef.current;
-          const diff = Math.abs(targetIndex - fromIndex);
-
-          // If jump is larger than one step, snap immediately with zero empty frames
-          if (diff > 1) {
-            snapTo(targetIndex);
-            return;
-          }
-
-          if (targetIndex === fromIndex) return;
-
-          // If a timeline is already running, complete/kill and reset previous cards cleanly
-          if (activeTimeline) {
-            activeTimeline.kill();
-            activeTimeline = null;
-          }
-
-          // Ensure all bystander cards are hidden
-          cards.forEach((c, idx) => {
-            if (idx !== fromIndex && idx !== targetIndex) {
-              setCardHiddenState(c);
-            }
-          });
-
-          // Ensure fromIndex is fully visible and clean as outgoing baseline
-          setCardRestingState(cards[fromIndex]);
-          gsap.set(cards[fromIndex], { zIndex: 1 });
-
-          const direction = targetIndex > fromIndex ? 1 : -1;
-          currentIndexRef.current = targetIndex;
-          setActiveIndex(targetIndex); // Instant update for nav, counter, and rail dot
-          isTransitioningRef.current = true;
-
-          const outgoing = cards[fromIndex];
-          const incoming = cards[targetIndex];
-
-          const inPhaseNum = incoming.querySelector('.step-anim-phase-num');
-          const inTitle = incoming.querySelector('.step-anim-title');
-          const inDesc = incoming.querySelector('.step-anim-desc');
-          const inDetail = incoming.querySelector('.step-anim-detail');
-          const inAccentLine = incoming.querySelector('.step-anim-accent-line');
-          const inChips = incoming.querySelectorAll('.step-anim-chip');
-          const inBigNum = incoming.querySelector('.step-parallax-num');
-
-          // Incoming card starts transparent on top (zIndex: 2), so outgoing underneath remains visible
-          gsap.set(incoming, {
-            autoAlpha: 0,
-            opacity: 0,
-            y: 0,
-            visibility: 'visible',
-            zIndex: 2,
-            pointerEvents: 'auto'
-          });
-
-          if (inBigNum) gsap.set(inBigNum, { y: direction === 1 ? 24 : -24, opacity: 0 });
-          if (inPhaseNum) gsap.set(inPhaseNum, { yPercent: direction === 1 ? 30 : -30, opacity: 0 });
-          if (inTitle) gsap.set(inTitle, { yPercent: direction === 1 ? 25 : -25, opacity: 0 });
-          if (inDesc) gsap.set(inDesc, { y: direction === 1 ? 12 : -12, opacity: 0 });
-          if (inDetail) gsap.set(inDetail, { y: direction === 1 ? 12 : -12, opacity: 0 });
-          if (inAccentLine) gsap.set(inAccentLine, { scaleY: 0, transformOrigin: direction === 1 ? 'top center' : 'bottom center' });
-          if (inChips && inChips.length) gsap.set(inChips, { opacity: 0, y: direction === 1 ? 8 : -8 });
-
-          const tl = gsap.timeline({
-            onComplete: () => {
-              setCardHiddenState(outgoing);
-              setCardRestingState(incoming);
-              isTransitioningRef.current = false;
-              activeTimeline = null;
-            }
-          });
-
-          activeTimeline = tl;
-
-          // Cross-fade: incoming card cross-fades directly over outgoing (0.24s total)
-          tl.to(incoming, { autoAlpha: 1, opacity: 1, duration: 0.24, ease: 'power2.out' }, 0);
-          if (inPhaseNum) tl.to(inPhaseNum, { yPercent: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0);
-          if (inTitle) tl.to(inTitle, { yPercent: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0.02);
-          if (inDesc) tl.to(inDesc, { y: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0.03);
-          if (inDetail) tl.to(inDetail, { y: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0.04);
-          if (inAccentLine) tl.to(inAccentLine, { scaleY: 1, duration: 0.24, ease: 'power2.out' }, 0.04);
-          if (inChips && inChips.length) tl.to(inChips, { opacity: 1, y: 0, duration: 0.2, stagger: 0.02, ease: 'power2.out' }, 0.05);
-          if (inBigNum) tl.to(inBigNum, { y: 0, opacity: 0.12, duration: 0.26, ease: 'power3.out' }, 0);
-
-          // Outgoing card fades underneath once incoming is already taking over
-          tl.to(outgoing, { autoAlpha: 0, opacity: 0, duration: 0.22, ease: 'power2.in' }, 0.06);
-        };
-
-        goToRef.current = goTo;
-
-        // Pinned stage ScrollTrigger
-        if (stageRef.current) {
-          // Phones pin heading + stage together; desktop pins only the stage
-          const pinEl = isMobile && pinWrapRef.current ? pinWrapRef.current : stageRef.current;
-          const st = ScrollTrigger.create({
-            trigger: pinEl,
-            pin: pinEl,
-            anticipatePin: 1,
-            // If the group is taller than a short phone screen, keep the card in view
-            start: () => (isMobile && pinEl.offsetHeight > window.innerHeight ? 'bottom bottom' : 'top top'),
-            end: () => '+=' + (numSteps * (isMobile ? 45 : 60)) + '%',
-            onEnter: (self) => {
-              const targetIdx = Math.min(numSteps - 1, Math.max(0, Math.floor(self.progress * numSteps)));
-              snapTo(targetIdx);
-            },
-            onLeave: () => {
-              snapTo(numSteps - 1);
-            },
-            onEnterBack: (self) => {
-              const targetIdx = Math.min(numSteps - 1, Math.max(0, Math.floor(self.progress * numSteps)));
-              snapTo(targetIdx);
-            },
-            onLeaveBack: () => {
-              snapTo(0);
-            },
-            onUpdate: (self) => {
-              // Continuous progress line
-              if (progressLineRef.current) {
-                progressLineRef.current.style.transform = `scaleX(${Math.max(0.04, self.progress)})`;
-              }
-
-              const targetIdx = Math.min(numSteps - 1, Math.max(0, Math.floor(self.progress * numSteps)));
-              goTo(targetIdx);
-            }
-          });
-
-          scrollTriggerInstanceRef.current = st;
+        // If jump is larger than one step, snap immediately with zero empty frames
+        if (diff > 1) {
+          snapTo(targetIndex);
+          return;
         }
-      } else if (isMobile) {
-        // Mobile sequence: NO pinning. Reveal each card on scroll and toggle .is-active
-        cards.forEach((card, idx) => {
-          const pNum = card.querySelector('.step-anim-phase-num');
-          const al = card.querySelector('.step-anim-accent-line');
 
-          gsap.from(card, {
-            y: 32,
-            opacity: 0,
-            duration: 0.8,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: card,
-              start: 'top 85%',
-              once: true
-            }
-          });
+        if (targetIndex === fromIndex) return;
 
-          if (pNum) {
-            gsap.from(pNum, {
-              y: 16,
-              opacity: 0,
-              duration: 0.6,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: card,
-                start: 'top 85%',
-                once: true
-              }
-            });
+        // If a timeline is already running, complete/kill and reset previous cards cleanly
+        if (activeTimeline) {
+          activeTimeline.kill();
+          activeTimeline = null;
+        }
+
+        // Ensure all bystander cards are hidden
+        cards.forEach((c, idx) => {
+          if (idx !== fromIndex && idx !== targetIndex) {
+            setCardHiddenState(c);
           }
-
-          if (al) {
-            gsap.fromTo(al,
-              { scaleY: 0 },
-              {
-                scaleY: 1,
-                duration: 0.8,
-                ease: 'power3.out',
-                scrollTrigger: {
-                  trigger: card,
-                  start: 'top 85%',
-                  once: true
-                }
-              }
-            );
-          }
-
-          // Cross 60% of viewport: toggle .is-active and update sticky counter / progress
-          ScrollTrigger.create({
-            trigger: card,
-            start: 'top 60%',
-            end: 'bottom 60%',
-            onToggle: (self) => {
-              if (self.isActive) {
-                card.classList.add('is-active');
-                setActiveIndex(idx);
-                if (progressLineRef.current) {
-                  gsap.to(progressLineRef.current, {
-                    scaleX: (idx + 1) / numSteps,
-                    duration: 0.3,
-                    ease: 'power2.out'
-                  });
-                }
-              } else {
-                card.classList.remove('is-active');
-              }
-            }
-          });
         });
+
+        // Ensure fromIndex is fully visible and clean as outgoing baseline
+        setCardRestingState(cards[fromIndex]);
+        gsap.set(cards[fromIndex], { zIndex: 1 });
+
+        const direction = targetIndex > fromIndex ? 1 : -1;
+        currentIndexRef.current = targetIndex;
+        setActiveIndex(targetIndex); // Instant update for nav, counter, and rail dot
+        isTransitioningRef.current = true;
+
+        const outgoing = cards[fromIndex];
+        const incoming = cards[targetIndex];
+
+        const inPhaseNum = incoming.querySelector('.step-anim-phase-num');
+        const inTitle = incoming.querySelector('.step-anim-title');
+        const inDesc = incoming.querySelector('.step-anim-desc');
+        const inDetail = incoming.querySelector('.step-anim-detail');
+        const inAccentLine = incoming.querySelector('.step-anim-accent-line');
+        const inChips = incoming.querySelectorAll('.step-anim-chip');
+        const inBigNum = incoming.querySelector('.step-parallax-num');
+
+        // Incoming card starts transparent on top (zIndex: 2), so outgoing underneath remains visible
+        gsap.set(incoming, {
+          autoAlpha: 0,
+          opacity: 0,
+          y: 0,
+          visibility: 'visible',
+          zIndex: 2,
+          pointerEvents: 'auto'
+        });
+
+        if (inBigNum) gsap.set(inBigNum, { y: direction === 1 ? 24 : -24, opacity: 0 });
+        if (inPhaseNum) gsap.set(inPhaseNum, { yPercent: direction === 1 ? 30 : -30, opacity: 0 });
+        if (inTitle) gsap.set(inTitle, { yPercent: direction === 1 ? 25 : -25, opacity: 0 });
+        if (inDesc) gsap.set(inDesc, { y: direction === 1 ? 6 : -6, opacity: 0 });
+        if (inDetail) gsap.set(inDetail, { y: direction === 1 ? 6 : -6, opacity: 0 });
+        if (inAccentLine) gsap.set(inAccentLine, { scaleY: 0, transformOrigin: 'top center' });
+        if (inChips && inChips.length) gsap.set(inChips, { opacity: 0, y: direction === 1 ? 8 : -8 });
+
+        const tl = gsap.timeline({
+          onComplete: () => {
+            setCardHiddenState(outgoing);
+            setCardRestingState(incoming);
+            isTransitioningRef.current = false;
+            activeTimeline = null;
+          }
+        });
+
+        activeTimeline = tl;
+
+        // Cross-fade: incoming card cross-fades directly over outgoing (0.24s total)
+        tl.to(incoming, { autoAlpha: 1, opacity: 1, duration: 0.24, ease: 'power2.out' }, 0);
+        if (inPhaseNum) tl.to(inPhaseNum, { yPercent: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0);
+        if (inTitle) tl.to(inTitle, { yPercent: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0.02);
+        if (inDesc) tl.to(inDesc, { y: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0.03);
+        if (inDetail) tl.to(inDetail, { y: 0, opacity: 1, duration: 0.24, ease: 'power3.out' }, 0.04);
+        if (inAccentLine) tl.to(inAccentLine, { scaleY: 1, duration: 0.24, ease: 'power2.out' }, 0.04);
+        if (inChips && inChips.length) tl.to(inChips, { opacity: 1, y: 0, duration: 0.2, stagger: 0.02, ease: 'power2.out' }, 0.05);
+        if (inBigNum) tl.to(inBigNum, { y: 0, opacity: 0.12, duration: 0.26, ease: 'power3.out' }, 0);
+
+        // Outgoing card fades underneath once incoming is already taking over
+        tl.to(outgoing, { autoAlpha: 0, opacity: 0, duration: 0.22, ease: 'power2.in' }, 0.06);
+      };
+
+      goToRef.current = goTo;
+
+      // Pinned stage ScrollTrigger
+      if (stageRef.current) {
+        // Phones pin heading + stage together; desktop pins only the stage
+        const pinEl = isMobile && pinWrapRef.current ? pinWrapRef.current : stageRef.current;
+        const st = ScrollTrigger.create({
+          trigger: pinEl,
+          pin: pinEl,
+          anticipatePin: 1,
+          // If the group is taller than a short phone screen, keep the card in view
+          start: () => (isMobile && pinEl.offsetHeight > window.innerHeight ? 'bottom bottom' : 'top top'),
+          end: () => '+=' + (numSteps * (isMobile ? 45 : 60)) + '%',
+          onEnter: (self) => {
+            const targetIdx = Math.min(numSteps - 1, Math.max(0, Math.floor(self.progress * numSteps)));
+            snapTo(targetIdx);
+          },
+          onLeave: () => {
+            snapTo(numSteps - 1);
+          },
+          onEnterBack: (self) => {
+            const targetIdx = Math.min(numSteps - 1, Math.max(0, Math.floor(self.progress * numSteps)));
+            snapTo(targetIdx);
+          },
+          onLeaveBack: () => {
+            snapTo(0);
+          },
+          onUpdate: (self) => {
+            // Continuous progress line
+            if (progressLineRef.current) {
+              progressLineRef.current.style.transform = `scaleX(${Math.max(0.04, self.progress)})`;
+            }
+
+            if (isScrollingRef.current) return;
+            const targetIdx = Math.min(numSteps - 1, Math.max(0, Math.floor(self.progress * numSteps)));
+            goTo(targetIdx);
+          }
+        });
+
+        scrollTriggerInstanceRef.current = st;
       }
 
       // "How to join": SVG line draws through the three steps as you scroll
@@ -380,17 +310,26 @@ export const Academy = () => {
 
   // Click handler for left list items: scrolls with lenis.scrollTo (1.2s easeInOut), then goTo(i)
   const handleStepClick = (targetIdx) => {
+    isScrollingRef.current = true;
     const st = scrollTriggerInstanceRef.current;
     if (st) {
       const scrollPos = st.start + ((targetIdx + 0.25) / data.modules.length) * (st.end - st.start);
       if (window.lenis) {
         window.lenis.scrollTo(scrollPos, {
           duration: 1.2,
-          easing: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+          easing: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t,
+          onComplete: () => {
+            isScrollingRef.current = false;
+          }
         });
       } else {
         window.scrollTo({ top: scrollPos, behavior: 'smooth' });
+        setTimeout(() => {
+          isScrollingRef.current = false;
+        }, 1200);
       }
+    } else {
+      isScrollingRef.current = false;
     }
     if (goToRef.current) {
       goToRef.current(targetIdx);
@@ -569,7 +508,7 @@ export const Academy = () => {
         {/* Closing Action Footer */}
         <div className="academy-action-footer">
           <div>
-            {siteData.academyDetails && (siteData.academyDetails.confirmed ?? true) && (
+            {siteData.academyDetails && siteData.academyDetails.confirmed && (
               <div className="academy-details-strip">
                 {siteData.academyDetails.duration && (
                   <div className="academy-detail-item">
@@ -876,17 +815,20 @@ export const Academy = () => {
         .step-detail-container {
           position: relative;
           padding-left: 1.1rem;
-          margin-bottom: 1.5rem;
+          margin-top: 0.75rem;
+          margin-bottom: 1.25rem;
         }
 
         .step-anim-accent-line {
           position: absolute;
           left: 0;
-          top: 2px;
-          bottom: 2px;
-          width: 2px;
+          top: 3px;
+          bottom: 3px;
+          width: 2.5px;
+          border-radius: 1px;
           background: var(--color-dark-accent, #C88358);
           transform-origin: top center;
+          pointer-events: none;
         }
 
         .academy-step-card-detail {
@@ -1018,123 +960,165 @@ export const Academy = () => {
           color: #FAF8F5;
         }
 
-               /* MOBILE: same pinned scroll as desktop, compact layout */
+        /* MOBILE: same pinned scroll as desktop, perfectly balanced 100svh fit */
         @media (max-width: 860px) {
-          /* Heading + stage are pinned together and fill the screen */
+          /* Remove section-level paddings so pin-wrap handles safe screen offsets */
+          .academy-section {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+          }
+
+          /* Pin wrapper fits exact viewport height with balanced buffers above & below */
           .academy-pin-wrap {
             display: flex;
             flex-direction: column;
+            justify-content: center;
             box-sizing: border-box;
+            height: 100svh;
             min-height: 100svh;
-            padding-top: var(--header-height, 64px);
-            padding-bottom: 72px;            /* Call/WhatsApp bar */
+            max-height: 100svh;
+            padding-top: 1.25rem;
+            padding-bottom: calc(var(--mobile-bar-height, 60px) + 1.25rem);
+            overflow: hidden;
           }
+
           .academy-container-top {
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
+            padding-top: 0;
+            padding-bottom: 0;
+            flex-shrink: 0;
+          }
+          .academy-container-top .section-eyebrow-row {
+            margin-bottom: 1rem;
+            padding-bottom: 0.6rem;
+          }
+          .academy-container-top .section-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.15em;
+          }
+          .academy-container-top .section-oversized-num {
+            font-size: 2rem;
           }
           .academy-main-title {
-            font-size: 1.85rem;
-            margin-bottom: 0.75rem;
+            font-size: clamp(1.6rem, 6.4vw, 2rem);
+            margin-bottom: 0.65rem;
+            line-height: 1.15;
           }
           .academy-header-text p {
-            font-size: 1rem !important;
-            line-height: 1.45 !important;
+            font-size: 0.95rem !important;
+            line-height: 1.5 !important;
+            margin-bottom: 0 !important;
           }
           .academy-hero-grid {
-            margin-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
           }
+
           .academy-stage-wrapper {
-            flex: 1;
+            flex: 0 0 auto;
             display: flex;
             flex-direction: column;
+            justify-content: flex-start;
             height: auto;
             max-height: none;
             padding-top: 0;
+            min-height: 0;
           }
           .academy-stage-inner {
-            flex: 1;
-            max-height: none;
-          }
-          .academy-stage-grid {
-            flex: 1;
-          }
-          .academy-stage-header-row {
-            margin-bottom: 0.6rem;
-          }
-          .academy-progress-bar-wrap {
-            margin-bottom: 1rem;
-          }
-          .academy-stage-grid {
+            flex: 0 0 auto;
             display: flex;
             flex-direction: column;
-            align-items: stretch;
-            gap: 1rem;
+            justify-content: flex-start;
+            max-height: none;
+            min-height: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+          }
+          .academy-mobile-sticky-header {
+            margin-bottom: 0.9rem;
+            flex-shrink: 0;
+          }
+          .academy-stage-header-row {
+            margin-bottom: 0.5rem;
+          }
+          .academy-stage-header-row .section-label {
+            font-size: 0.72rem;
+          }
+          .academy-step-counter {
+            font-size: 0.9rem;
+          }
+          .academy-progress-bar-wrap {
+            margin-bottom: 0;
           }
 
-          /* No step buttons on phones: the progress line + counter already show the step */
-          .academy-stepper-nav {
-            display: none;
+          .academy-stage-grid {
+            flex: 0 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto;
+            min-height: 0;
+            align-items: stretch;
+            gap: 0;
           }
+
+          /* Hide stepper nav on phone */
+          .academy-stepper-nav,
           .academy-rail-track,
           .stepper-dot-indicator {
             display: none;
           }
-          .academy-stepper-btn {
-            flex: 1;
-            justify-content: center;
-            min-height: 44px;
-            padding: 0.4rem 0.25rem;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: transparent;
-          }
-          .academy-stepper-btn.active {
-            border-color: var(--color-dark-accent, #C88358);
-            background: rgba(200, 131, 88, 0.12);
-          }
-          .stepper-label {
-            font-size: 0;           /* hide the long title, keep it for screen readers */
-          }
-          .stepper-label strong {
-            font-size: 1rem;        /* show only 01 / 02 / 03 / 04 */
-          }
 
-          /* Card sized to fit a phone screen */
+          /* Card takes middle space and centers its content */
           .academy-card-stage {
-            flex: 1;         /* card takes only the small leftover height */
-            min-height: 0;
+            flex: 0 0 auto;
+            min-height: clamp(330px, 44svh, 430px);
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto;
           }
           .academy-step-card {
-            padding: 1.75rem 1.5rem;
+            padding: 1.6rem 1.4rem;
+            justify-content: center;
           }
           .academy-step-giant-num {
-            font-size: 2.75rem;
+            font-size: 2.6rem;
+          }
+          .academy-step-tag {
+            font-size: 0.72rem;
+          }
+          .academy-step-badge-row {
+            margin-bottom: 0.6rem;
           }
           .academy-step-card-title {
-            font-size: 2rem;
-            margin-bottom: 0.7rem;
+            font-size: clamp(1.7rem, 6.5vw, 2rem);
+            margin-bottom: 0.6rem;
+            line-height: 1.15;
           }
           .academy-step-card-desc {
-            font-size: 1.05rem;
-            margin-bottom: 1rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 0.9rem;
           }
           .step-detail-container {
-            margin-bottom: 1rem;
+            margin-top: 0.25rem;
+            margin-bottom: 1.1rem;
+            padding-left: 1rem;
           }
           .academy-step-card-detail {
-            font-size: 0.95rem;
+            font-size: 0.92rem;
+            line-height: 1.55;
           }
           .academy-step-footer-meta {
             gap: 0.5rem;
-            padding-top: 0.75rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
           }
           .step-anim-chip {
-            font-size: 0.68rem;
-            padding: 0.3rem 0.55rem;
+            font-size: 0.7rem;
+            padding: 0.35rem 0.6rem;
           }
           .step-parallax-num {
-            font-size: 8rem;
-            right: 1rem;
+            font-size: 7rem;
+            right: 0.5rem;
+            bottom: -0.5rem;
           }
 
           .academy-bottom-grid {
@@ -1147,6 +1131,27 @@ export const Academy = () => {
           .academy-action-footer {
             flex-direction: column;
             align-items: flex-start;
+          }
+        }
+
+        @media (max-width: 860px) and (max-height: 700px) {
+          .academy-header-text p {
+            display: none !important;
+          }
+          .academy-card-stage {
+            min-height: 0;
+          }
+          .academy-step-card {
+            padding: 1.1rem 1.2rem;
+          }
+          .academy-step-footer-meta {
+            display: none;
+          }
+          .academy-container-top .section-eyebrow-row {
+            margin-bottom: 0.6rem;
+          }
+          .academy-hero-grid {
+            margin-bottom: 1rem;
           }
         }
 
