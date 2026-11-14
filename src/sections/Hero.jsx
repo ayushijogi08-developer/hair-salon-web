@@ -613,12 +613,13 @@ transform: none;
           width: 108px;
           height: 108px;
           border-radius: 50%;
+          background: #141211;
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 5;
           pointer-events: none;
-          filter: drop-shadow(0 6px 18px rgba(25, 22, 20, 0.14));
+          filter: drop-shadow(0 6px 18px rgba(25, 22, 20, 0.16));
           transition: transform 0.3s ease;
         }
 
